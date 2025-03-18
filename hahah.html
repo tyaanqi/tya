@@ -1,0 +1,3577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>拍卖控制台 - 最终优化版</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #ff5e62, #ff9966);
+      --success-gradient: linear-gradient(135deg, #4CAF50, #8BC34A);
+      --warning-gradient: linear-gradient(135deg, #FFC107, #FF9800);
+      --danger-gradient: linear-gradient(135deg, #F44336, #E91E63);
+      --neutral-gradient: linear-gradient(135deg, #607D8B, #78909C);
+      --bg-white: #ffffff;
+      --bg-light: #f5f5f5;
+      --bg-card: #ffffff;
+      --text-primary: #333333;
+      --text-secondary: #757575;
+      --border-color: #e0e0e0;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --radius: 12px;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+    
+    .auction-console {
+      display: grid;
+      grid-template-columns: 1.2fr 1.6fr 1fr;
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        "header header header"
+        "left middle right";
+      height: 100vh;
+      padding: 16px;
+      gap: 16px;
+    }
+    
+    .header {
+      grid-area: header;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .auction-title {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .auction-name {
+      font-size: 20px;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .auction-date {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    
+    .header-center {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .auction-controls {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: var(--shadow);
+      border-radius: 8px;
+      padding: 8px 0;
+      z-index: 1;
+      right: 0;
+    }
+    
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    
+    .dropdown-item {
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .dropdown-item:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 6px 12px;
+      border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      font-size: 13px;
+    }
+    
+    .stat-icon {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .progress-mini {
+      width: 100px;
+      height: 6px;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      width: 35%;
+      background: var(--primary-gradient);
+      border-radius: 3px;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .left-section {
+      grid-area: left;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    
+    .middle-section {
+      grid-area: middle;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    
+    .right-section {
+      grid-area: right;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    
+    .card {
+      background-color: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    
+    .glass-card {
+      background-color: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    
+    .lot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .lot-id {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    
+    .lot-status {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background: var(--primary-gradient);
+      color: white;
+    }
+    
+    .image-gallery {
+      position: relative;
+      height: 240px;
+      margin: 12px 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .main-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background-color: #f9f9f9;
+    }
+    
+    .gallery-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      z-index: 2;
+    }
+    
+    .gallery-prev {
+      left: 12px;
+    }
+    
+    .gallery-next {
+      right: 12px;
+    }
+    
+    .lot-info {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .info-row {
+      display: flex;
+      margin-bottom: 4px;
+    }
+    
+    .label {
+      width: 60px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .description {
+      margin-top: 8px;
+    }
+    
+    .horizontal-scroll {
+      display: flex;
+      overflow-x: auto;
+      gap: 12px;
+      padding: 8px 0;
+      scrollbar-width: thin;
+      scrollbar-color: #ddd transparent;
+    }
+    
+    .horizontal-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    .horizontal-scroll::-webkit-scrollbar-thumb {
+      background-color: #ddd;
+      border-radius: 3px;
+    }
+    
+    .lot-item {
+      flex: 0 0 auto;
+      width: 80px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+    
+    .lot-item.current {
+      box-shadow: 0 0 0 2px var(--primary-gradient);
+    }
+    
+    .lot-thumbnail {
+      width: 100%;
+      height: 80px;
+      background-size: cover;
+      background-position: center;
+      background-color: #f0f0f0;
+    }
+    
+    .lot-item-id {
+      font-size: 11px;
+      text-align: center;
+      padding: 4px;
+      background-color: white;
+    }
+    
+    .lot-status-indicator {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .status-completed {
+      background-color: var(--success-color);
+    }
+    
+    .price-cards {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .price-card {
+      flex: 1;
+      background-color: white;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .price-card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .price-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    
+    .price-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .bid-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      margin-bottom: 24px;
+      width: 100%;
+    }
+    
+    .bid-button {
+      flex: 1;
+      min-width: 0;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background-color: #f5f5f5;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      transition: all 0.3s ease;
+      border: none;
+    }
+    
+    .bid-button:hover {
+      background-color: #e8e8e8;
+    }
+    
+    .bid-button.active {
+      background: var(--primary-gradient);
+      color: white;
+    }
+    
+    .bid-button.active.network {
+      background: linear-gradient(135deg, #f87c56, #ffc371);
+      color: white;
+    }
+    
+    .bid-type {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .bid-price {
+      font-size: 24px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex: 1;
+      text-align: center;
+      color: white;
+    }
+    
+    .btn-primary {
+      background: var(--primary-gradient);
+    }
+    
+    .btn-success {
+      background: var(--success-gradient);
+    }
+    
+    .btn-warning {
+      background: var(--warning-gradient);
+    }
+    
+    .btn-danger {
+      background: var(--danger-gradient);
+    }
+    
+    .btn-neutral {
+      background: var(--neutral-gradient);
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+    
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    
+    .bid-history {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    
+    .bidder-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .bidder-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--neutral-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+      font-size: 14px;
+    }
+    
+    .bid-type {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .bid-amount {
+      font-weight: 600;
+    }
+    
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .action-chip {
+      padding: 8px 12px;
+      background-color: #f0f0f0;
+      border-radius: 16px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .action-chip:hover {
+      background-color: #e8e8e8;
+    }
+    
+    .completed-lots {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .completed-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .completed-item:last-child {
+      border-bottom: none;
+    }
+    
+    .completed-thumbnail {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      background-color: #f0f0f0;
+    }
+    
+    .completed-info {
+      flex: 1;
+    }
+    
+    .completed-lot {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .completed-name {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .completed-price {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    input[type="text"] {
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    
+    input[type="text"]:focus {
+      border-color: #ff9966;
+    }
+    
+    .checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .step-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .step-option:hover {
+      background-color: #e8e8e8;
+    }
+    
+    .btn-gradient-blue {
+      background: linear-gradient(135deg, #78909C, #607D8B) !important;
+      border: none !important;
+    }
+    
+    .btn-gradient-red {
+      background: linear-gradient(135deg, #EF5350, #E53935) !important;
+      border: none !important;
+    }
+    
+    .btn-gradient-orange {
+      background: linear-gradient(135deg, #FF9800, #F57C00) !important;
+      border: none !important;
+    }
+    
+    .btn-gradient-green {
+      background: linear-gradient(135deg, #66BB6A, #4CAF50) !important;
+      border: none !important;
+    }
+    
+    /* 拍品缩略图悬停效果 */
+    .lot-item .lot-thumbnail {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .lot-item:hover .lot-thumbnail {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* 按钮点击动效 */
+    .btn {
+      transition: all 0.2s ease;
+    }
+    
+    .btn:active {
+      transform: scale(0.97);
+    }
+    
+    /* 竞拍记录新增项目动效 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .history-item-new {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    /* LIVE标签闪烁效果 */
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+    
+    .live-badge {
+      animation: pulse 1.5s infinite;
+    }
+    
+    /* 价格变化动效 */
+    @keyframes highlight {
+      0% { background-color: rgba(255, 152, 0, 0.2); }
+      100% { background-color: transparent; }
+    }
+    
+    .price-changed {
+      animation: highlight 1.5s ease;
+    }
+    
+    /* 下拉菜单动效 */
+    .dropdown-content {
+      transform-origin: top center;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      transform: scaleY(0);
+      opacity: 0;
+      display: block;
+      pointer-events: none;
+    }
+    
+    .dropdown:hover .dropdown-content {
+      transform: scaleY(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    /* 成交结果滑入效果 */
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .result-item {
+      animation: slideIn 0.3s ease forwards;
+    }
+    
+    /* 操作按钮悬停效果增强 */
+    .btn-gradient-blue:hover, .btn-gradient-red:hover, .btn-gradient-orange:hover, .btn-gradient-green:hover {
+      background-position: 100% 100%;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* 网络按钮激活状态的特殊效果 */
+    @keyframes networkHighlight {
+      0% { color: white; transform: scale(1); }
+      50% { color: gold; transform: scale(1.2); }
+      100% { color: white; transform: scale(1); }
+    }
+    
+    /* 网络按钮激活时的动画 */
+    .bid-button.active.network .bid-type {
+      animation: networkHighlight 2s infinite;
+    }
+    
+    /* 电话按钮激活样式 */
+    .bid-button.active.phone {
+      background: linear-gradient(135deg, #f87c56, #ffc371);
+      color: white;
+    }
+    
+    /* 现场按钮激活样式 */
+    .bid-button.active.venue {
+      background: linear-gradient(135deg, #f87c56, #ffc371);
+      color: white;
+    }
+    
+    /* 隐藏数字输入框的上下箭头 */
+    input[type="number"]::-webkit-inner-spin-button, 
+    input[type="number"]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    
+    /* 确认对话框样式 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .confirm-modal {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      width: 400px;
+      max-width: 90%;
+      padding: 24px;
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+    
+    .modal-overlay.active .confirm-modal {
+      transform: translateY(0);
+    }
+    
+    .confirm-modal-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .confirm-modal-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 16px;
+      color: white;
+    }
+    
+    .confirm-modal-icon.warning {
+      background: var(--warning-gradient);
+    }
+    
+    .confirm-modal-icon.danger {
+      background: var(--danger-gradient);
+    }
+    
+    .confirm-modal-icon.success {
+      background: var(--success-gradient);
+    }
+    
+    .confirm-modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .confirm-modal-content {
+      margin-bottom: 24px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    .confirm-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    
+    .modal-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    
+    .modal-btn-cancel {
+      background-color: #f5f5f5;
+      color: var(--text-primary);
+    }
+    
+    .modal-btn-cancel:hover {
+      background-color: #e8e8e8;
+    }
+    
+    .modal-btn-confirm {
+      color: white;
+    }
+    
+    .modal-btn-confirm.warning {
+      background: var(--warning-gradient);
+    }
+    
+    .modal-btn-confirm.danger {
+      background: var(--danger-gradient);
+    }
+    
+    .modal-btn-confirm.success {
+      background: var(--success-gradient);
+    }
+    
+    .modal-btn-confirm:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    
+    /* 暂停拍卖遮罩样式 - 改进版 */
+    .pause-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.7) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+      backdrop-filter: blur(3px);
+    }
+    
+    .pause-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .pause-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      animation: fadeInUp 0.5s ease forwards;
+    }
+    
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .pause-status {
+      background: linear-gradient(135deg, #FF9800, #F57C00);
+      color: white;
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-size: 18px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .pause-status i {
+      font-size: 20px;
+    }
+    
+    .pause-button {
+      background: linear-gradient(135deg, #4CAF50, #8BC34A);
+      border-radius: 12px;
+      width: 120px;
+      height: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 
+                  inset 0 -2px 6px rgba(0, 0, 0, 0.1),
+                  inset 0 2px 6px rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .pause-button::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .pause-button:hover {
+      transform: scale(1.05) translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3), 
+                  inset 0 -2px 6px rgba(0, 0, 0, 0.1),
+                  inset 0 2px 6px rgba(255, 255, 255, 0.5);
+    }
+    
+    .pause-button:hover::after {
+      opacity: 0.5;
+    }
+    
+    .pause-icon {
+      font-size: 40px;
+      color: white;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .pause-text {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .pause-message {
+      color: white;
+      font-size: 16px;
+      text-align: center;
+      max-width: 400px;
+      line-height: 1.5;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* 加价幅度区域样式 */
+    .bid-increment-section {
+      margin-top: 40px;  /* 增加顶部边距 */
+      position: relative;
+    }
+
+    /* 箭头线条样式 */
+    .arrow-line {
+      position: absolute;
+      left: -20px;  /* 调整箭头位置 */
+      width: 20px;
+      height: 2px;
+      background-color: #E0E0E0;
+    }
+
+    .arrow-line::after {
+      content: '>';
+      position: absolute;
+      right: -8px;
+      top: -8px;
+      color: #E0E0E0;
+      font-size: 14px;
+    }
+
+    /* 调整输入框组的位置，为箭头留出空间 */
+    .step-group {
+      margin-left: 30px;
+      position: relative;
+    }
+
+    .bid-step-container {
+      margin-top: 15px;  /* 减小顶部边距 */
+    }
+
+    .column-headers {
+      display: flex;
+      margin-bottom: 10px;  /* 减小标题和内容之间的间距 */
+      font-weight: bold;
+    }
+
+    .price-range-header {
+      width: 200px;
+    }
+
+    .increment-header {
+      flex: 1;
+    }
+
+    .bid-steps-wrapper {
+      display: flex;
+    }
+
+    .interval-container {
+      width: 200px;
+    }
+
+    .step-groups-container {
+      flex: 1;
+    }
+
+    .step-input {
+      margin-bottom: 8px;  /* 减小输入框之间的间距 */
+      width: 120px;
+      padding: 8px 10px;  /* 减小输入框内部的padding */
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05) inset;
+    }
+
+    .step-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;  /* 减小输入框和按钮之间的间距 */
+      margin-bottom: 8px;  /* 减小组之间的间距 */
+    }
+
+    .add-step-btn,
+    .remove-step-btn {
+      width: 32px;  /* 稍微减小按钮尺寸 */
+      height: 32px;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-size: 20px;  /* 稍微减小图标尺寸 */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 15px 20px;  /* 适当减小modal内部padding */
+    }
+
+    .modal-body p {
+      margin-bottom: 10px;  /* 减小说明文字的下边距 */
+    }
+
+    .bid-step-container {
+      padding: 20px 0;
+    }
+
+    .bid-step-row {
+      display: flex;
+      align-items: flex-start; /* 修改为顶部对齐 */
+      margin-bottom: 8px; /* 减少行间距，从15px减少到8px */
+    }
+
+    .price-range {
+      width: 120px;
+      margin-right: 20px;
+    }
+
+    .range-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05) inset;
+      height: 42px; /* 确保高度一致 */
+      box-sizing: border-box; /* 确保包含padding在内的尺寸 */
+    }
+
+    .step-values {
+      display: flex;
+      flex-direction: row; /* 确保水平排列 */
+      flex-wrap: nowrap; /* 不换行 */
+      gap: 10px;
+      align-items: center; /* 垂直居中对齐 */
+    }
+
+    .step-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-input {
+      width: 120px;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05) inset;
+      height: 42px; /* 确保高度一致 */
+      box-sizing: border-box; /* 确保包含padding在内的尺寸 */
+    }
+
+    .add-step, .remove-step {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      color: white;
+      transition: all 0.2s;
+      margin-top: 0; /* 移除顶部边距，使用 align-items: center 实现居中 */
+    }
+
+    .add-step {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .remove-step {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .bid-step-actions {
+      margin-top: 20px;
+    }
+
+    .action-button {
+      padding: 8px 16px;
+      margin-right: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: white;
+      cursor: pointer;
+    }
+
+    .action-button:hover {
+      background-color: #f5f5f5;
+    }
+
+    /* 修改竞价阶梯对话框样式 */
+    #bidStepModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    #bidStepModal .modal-content {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      width: 800px;
+      max-width: 90%;
+      position: relative;
+    }
+
+    #bidStepModal .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #bidStepModal .modal-header h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    #bidStepModal .close {
+      font-size: 24px;
+      color: #666;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    #bidStepModal .close:hover {
+      color: #333;
+    }
+
+    #bidStepModal .modal-footer {
+      padding: 20px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    #bidStepModal .confirm-button,
+    #bidStepModal .cancel-button {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+    }
+
+    #bidStepModal .confirm-button {
+      background: var(--primary-gradient);
+      color: white;
+    }
+
+    #bidStepModal .cancel-button {
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    /* 竞价阶梯特有的样式 */
+    .bid-step-container {
+      margin: 20px 0;
+    }
+
+    .bid-step-labels {
+      display: flex;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #555;
+    }
+
+    .price-range-label {
+      width: 120px;
+      margin-right: 20px;
+    }
+
+    .step-values-label {
+      flex: 1;
+    }
+
+    .bid-step-row {
+      display: flex;
+      align-items: flex-start; /* 修改为顶部对齐 */
+      margin-bottom: 8px; /* 减少行间距，从15px减少到8px */
+    }
+
+    .price-range {
+      width: 120px;
+      margin-right: 20px;
+    }
+
+    .range-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05) inset;
+      height: 42px; /* 确保高度一致 */
+      box-sizing: border-box; /* 确保包含padding在内的尺寸 */
+    }
+
+    .step-values {
+      display: flex;
+      flex-direction: row; /* 确保水平排列 */
+      flex-wrap: nowrap; /* 不换行 */
+      gap: 10px;
+      align-items: center; /* 垂直居中对齐 */
+    }
+
+    .step-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-input {
+      width: 120px;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05) inset;
+      height: 42px; /* 确保高度一致 */
+      box-sizing: border-box; /* 确保包含padding在内的尺寸 */
+    }
+
+    .add-step, .remove-step {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      color: white;
+      transition: all 0.2s;
+      margin-top: 0; /* 移除顶部边距，使用 align-items: center 实现居中 */
+    }
+
+    .add-step {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+    }
+
+    .remove-step {
+      background: linear-gradient(135deg, #f44336, #e53935);
+    }
+
+    .add-step:hover, .remove-step:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .bid-step-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+    }
+    
+    /* 投屏选项弹出菜单 */
+    .cast-options {
+      position: fixed;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      padding: 12px;
+      z-index: 1001;
+      display: none;
+      width: 340px;
+    }
+    
+    .cast-options h4 {
+      margin: 0 0 12px 0;
+      color: #333;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    .cast-option-list {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    
+    .cast-option {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f5f7fa;
+      border: 2px solid #f5f7fa;
+      border-radius: 6px;
+      padding: 16px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .cast-option:hover {
+      background-color: #eef2f9;
+      border-color: #4388e9;
+    }
+    
+    .cast-option.selected {
+      background-color: #eef2f9;
+      border-color: #4388e9;
+    }
+    
+    .cast-option-icon {
+      margin-bottom: 10px;
+      position: relative;
+    }
+    
+    .ratio-16-9 {
+      width: 64px;
+      height: 36px;
+      background-color: #4388e9;
+      border-radius: 2px;
+    }
+    
+    .ratio-3-4 {
+      width: 45px;
+      height: 60px;
+      background-color: #4388e9;
+      border-radius: 2px;
+    }
+    
+    .ratio-1-1 {
+      width: 50px;
+      height: 50px;
+      background-color: #4388e9;
+      border-radius: 2px;
+    }
+    
+    .cast-option-label {
+      font-size: 14px;
+      color: #333;
+      margin-top: 6px;
+    }
+    
+    .cast-buttons {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+      gap: 10px;
+    }
+    
+    .cast-cancel-btn {
+      padding: 6px 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: white;
+      color: #333;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .cast-confirm-btn {
+      padding: 6px 16px;
+      border: 1px solid #4388e9;
+      border-radius: 4px;
+      background-color: #4388e9;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .cast-cancel-btn:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .cast-confirm-btn:hover {
+      background-color: #2d6bc7;
+    }
+    
+    .cast-option-desc {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+      text-align: center;
+    }
+    
+    /* 投屏选项弹出菜单样式 */
+    #castScreenOptions {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      width: 360px;
+      z-index: 10000;
+      display: none;
+    }
+    
+    #castScreenOptions h4 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: #333;
+      font-weight: 500;
+    }
+    
+    .cast-option-list {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    
+    .cast-option {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px 10px;
+      border: 2px solid #f5f7fa;
+      border-radius: 6px;
+      background-color: #f5f7fa;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .cast-option:hover {
+      border-color: #4388e9;
+      background-color: #eef2f9;
+    }
+    
+    .cast-option.selected {
+      border-color: #4388e9;
+      background-color: #eef2f9;
+    }
+    
+    .cast-icon {
+      margin-bottom: 10px;
+    }
+    
+    .ratio-16-9 {
+      width: 64px;
+      height: 36px;
+      background-color: #4388e9;
+      border-radius: 2px;
+    }
+    
+    .ratio-3-4 {
+      width: 45px;
+      height: 60px;
+      background-color: #4388e9;
+      border-radius: 2px;
+    }
+    
+    .ratio-1-1 {
+      width: 50px;
+      height: 50px;
+      background-color: #4388e9;
+      border-radius: 2px;
+    }
+    
+    .cast-label {
+      font-size: 14px;
+      color: #333;
+      margin: 5px 0;
+    }
+    
+    .cast-desc {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+    
+    .cast-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+      gap: 10px;
+    }
+    
+    .cast-btn {
+      padding: 8px 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    
+    .cast-cancel {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      color: #333;
+    }
+    
+    .cast-confirm {
+      background-color: #4388e9;
+      border: 1px solid #4388e9;
+      color: white;
+    }
+    
+    /* 投屏模态框样式 */
+    #screenCastModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    
+    .cast-dialog {
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 400px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .cast-title {
+      font-size: 18px;
+      font-weight: 500;
+      margin: 0 0 20px 0;
+      color: #333;
+    }
+    
+    .cast-options {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .cast-option {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px 10px;
+      border: 2px solid #f0f0f0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .cast-option:hover {
+      border-color: #4388e9;
+      background-color: #f7f9ff;
+    }
+    
+    .cast-option.selected {
+      border-color: #4388e9;
+      background-color: #f0f7ff;
+    }
+    
+    .ratio-box {
+      margin-bottom: 10px;
+    }
+    
+    .ratio-box.ratio-16-9 {
+      width: 80px;
+      height: 45px;
+      background-color: #4388e9;
+      border-radius: 4px;
+    }
+    
+    .ratio-box.ratio-3-4 {
+      width: 60px;
+      height: 80px;
+      background-color: #4388e9;
+      border-radius: 4px;
+    }
+    
+    .ratio-box.ratio-1-1 {
+      width: 70px;
+      height: 70px;
+      background-color: #4388e9;
+      border-radius: 4px;
+    }
+    
+    .cast-option-name {
+      font-weight: 500;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    
+    .cast-option-desc {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+    
+    .cast-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .cast-btn {
+      padding: 8px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .cast-cancel {
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      color: #333;
+    }
+    
+    .cast-confirm {
+      background-color: #4388e9;
+      border: 1px solid #4388e9;
+      color: white;
+    }
+
+    /* 模态框基础样式 */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    /* 确认模态框样式 */
+    .confirm-modal {
+        background: white;
+        padding: 24px;  /* 与修改起拍价保持一致的内边距 */
+        border-radius: 8px;
+        width: 450px;   /* 与修改起拍价保持一致的宽度 */
+        box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+    }
+
+    /* 模态框标题样式 */
+    .confirm-modal h3 {
+        font-size: 16px;
+        color: #333;
+        margin-bottom: 24px;
+        font-weight: 500;
+    }
+
+    /* 竞价阶梯行样式 */
+    .bid-step-row {
+        display: flex;
+        gap: 16px;  /* 统一间距 */
+        margin-bottom: 16px;
+        align-items: flex-start;
+    }
+
+    /* 输入框统一样式 */
+    .range-input, .step-input {
+        width: 120px;
+        height: 32px;  /* 统一输入框高度 */
+        padding: 0 12px;
+        border: 1px solid #DCDFE6;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #606266;
+    }
+
+    /* 输入框焦点样式 */
+    .range-input:focus, .step-input:focus {
+        border-color: #409EFF;
+        outline: none;
+    }
+
+    /* 按钮基础样式 */
+    .add-step, .remove-step {
+        width: 32px;  /* 统一按钮尺寸 */
+        height: 32px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+
+    /* 添加按钮样式 */
+    .add-step {
+        background: #67C23A;
+        color: white;
+    }
+
+    /* 删除按钮样式 */
+    .remove-step {
+        background: #F56C6C;
+        color: white;
+    }
+
+    /* 添加新行按钮容器样式 */
+    .add-row-container {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    /* 添加新行按钮样式 */
+    .add-row {
+        padding: 8px 16px;
+        background: #409EFF;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    /* 模态框底部按钮容器样式 */
+    .modal-footer {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* 模态框按钮样式 */
+    .modal-footer button {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    /* 确认按钮样式 */
+    .modal-footer button:last-child {
+        background: #409EFF;
+        color: white;
+        border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="auction-console">
+    <header class="header">
+      <div class="auction-title">
+        <div class="auction-name">2023年春季艺术品拍卖会</div>
+        <div class="auction-date">2023年5月15日 14:00-18:00</div>
+      </div>
+      
+      <div class="header-center">
+        <div class="auction-controls">
+          <button class="btn btn-primary">开始拍卖</button>
+          <button class="btn btn-warning" id="pauseAuctionBtn">暂停拍卖</button>
+          <button class="btn btn-danger">结束拍卖</button>
+          
+          <div class="dropdown">
+            <button class="btn btn-outline" style="display: flex; align-items: center; gap: 8px;">
+              <span>更多操作</span>
+              <i class="fas fa-ellipsis-h"></i>
+            </button>
+            <div class="dropdown-content" style="left: 0; right: auto;">
+              <div class="dropdown-item">
+                <i class="fas fa-desktop" style="margin-right: 8px; color: #757575;"></i>
+                投屏
+            </div>
+              <div class="dropdown-item">
+                <i class="fas fa-video" style="margin-right: 8px; color: #757575;"></i>
+                开启视频
+          </div>
+              <div class="dropdown-item" onclick="showBidStepModal()">
+                <i class="fas fa-sliders-h" style="margin-right: 8px; color: #757575;"></i>
+                修改竞价阶梯
+              </div>
+              <div class="dropdown-item" onclick="showStartingPriceModal()">
+                <i class="fas fa-tag" style="margin-right: 8px; color: #757575;"></i>
+                修改起拍价
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="header-right">
+        <div class="stats-bar">
+          <div class="stat-pill">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div>128人</div>
+          </div>
+          
+          <div class="stat-pill">
+            <div class="stat-icon"><i class="fas fa-wifi"></i></div>
+            <div>200ms</div>
+          </div>
+          
+          <div class="stat-pill">
+            <div class="progress-mini">
+              <div class="progress-fill"></div>
+            </div>
+            <div>35%</div>
+          </div>
+        </div>
+        
+        <div class="dropdown">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background-color: #F57C00; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer;">
+            A
+          </div>
+          <div class="dropdown-content" style="right: 0; left: auto; min-width: 140px;">
+            <div class="dropdown-item">
+              <i class="fas fa-user" style="margin-right: 8px; color: #757575;"></i>
+              个人中心
+            </div>
+            <div class="dropdown-item">
+              <i class="fas fa-sign-out-alt" style="margin-right: 8px; color: #757575;"></i>
+              退出登录
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    
+    <section class="left-section">
+      <div class="card">
+        <div class="lot-header">
+          <div style="display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <div class="lot-id" style="font-size: 24px; margin-bottom: 4px; position: relative; display: inline-block;">
+                <span style="font-weight: 700;">LOT</span><span id="lotNumber" 
+                     style="font-weight: 700; cursor: text;" 
+                     contenteditable="true"
+                     onkeypress="return /[0-9]/.test(event.key)"
+                     onpaste="event.preventDefault(); const text = (event.clipboardData || window.clipboardData).getData('text'); if(/^[0-9]+$/.test(text)) { document.execCommand('insertText', false, text); }"
+                     onmouseover="this.style.backgroundColor='rgba(255,158,102,0.1)'; this.style.borderRadius='4px'; this.style.padding='0 4px';"
+                     onmouseout="this.style.backgroundColor='transparent'; this.style.padding='0';"
+                     title="点击此处编辑拍品编号">001</span>
+                <i class="fas fa-pencil-alt" style="font-size: 12px; color: #757575; position: absolute; right: -20px; top: 50%; transform: translateY(-50%);"></i>
+              </div>
+            </div>
+            <div style="font-size: 18px; font-weight: 500;">清乾隆青花瓷瓶</div>
+          </div>
+          <div class="lot-status">竞拍中</div>
+        </div>
+        
+        <div class="image-gallery">
+          <img src="https://via.placeholder.com/800x600" alt="清乾隆青花瓷瓶" class="main-image">
+          <div class="gallery-nav gallery-prev"><i class="fas fa-chevron-left"></i></div>
+          <div class="gallery-nav gallery-next"><i class="fas fa-chevron-right"></i></div>
+        </div>
+        
+        <div class="lot-info">
+          <div class="info-row">
+            <span class="label">起拍价:</span>
+            <span>¥50,000</span>
+          </div>
+          <div class="info-row">
+            <span class="label">估价:</span>
+            <span>¥60,000 - 80,000</span>
+          </div>
+          <div class="info-row description">
+            <span class="label">描述:</span>
+            <div style="flex: 1; max-height: 120px; overflow-y: auto; overflow-x: auto; white-space: pre-wrap; padding-right: 8px;">
+              清乾隆时期青花瓷瓶，保存完好，纹饰清晰，底款"大清乾隆年制"。高28厘米，口径8厘米。
+              
+              此拍品为清代乾隆时期的官窑精品，胎质细腻，釉面莹润，青花发色纯正浓艳。瓶身绘制有缠枝莲纹，颈部饰以如意云头纹，底部青花书"大清乾隆年制"六字三行篆书款。
+              
+              此类瓷器为乾隆时期宫廷御用器物，传世稀少，具有极高的历史、艺术和收藏价值。
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">本场拍品</div>
+        </div>
+        
+        <div class="horizontal-scroll">
+          <!-- 当前拍品 (LOT001) - 带LIVE标签 -->
+          <div class="lot-item current">
+            <div class="lot-thumbnail" style="background-image: url('https://via.placeholder.com/80x80'); position: relative;">
+              <div class="live-badge" style="position: absolute; top: 8px; right: 8px; background-color: #E53935; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">LIVE</div>
+            </div>
+            <div class="lot-item-id">LOT001</div>
+          </div>
+          
+          <!-- 已成交拍品 (LOT002) -->
+          <div class="lot-item">
+            <div class="lot-thumbnail" style="background-image: url('https://via.placeholder.com/80x80'); position: relative;">
+              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                <div style="background-color: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #4CAF50; font-size: 10px;">
+                  ¥32,000
+                </div>
+              </div>
+            </div>
+            <div class="lot-item-id">LOT002</div>
+          </div>
+          
+          <!-- 流拍拍品 (LOT003) -->
+          <div class="lot-item">
+            <div class="lot-thumbnail" style="background-image: url('https://via.placeholder.com/80x80'); position: relative;">
+              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                <div style="background-color: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #F57C00; font-size: 10px;">
+                  流拍
+                </div>
+              </div>
+            </div>
+            <div class="lot-item-id">LOT003</div>
+          </div>
+          
+          <!-- 撤拍拍品 (LOT004) -->
+          <div class="lot-item">
+            <div class="lot-thumbnail" style="background-image: url('https://via.placeholder.com/80x80'); position: relative;">
+              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                <div style="background-color: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #E53935; font-size: 10px;">
+                  撤拍
+                </div>
+              </div>
+            </div>
+            <div class="lot-item-id">LOT004</div>
+          </div>
+          
+          <!-- 待拍拍品 (LOT005) -->
+          <div class="lot-item">
+            <div class="lot-thumbnail" style="background-image: url('https://via.placeholder.com/80x80')"></div>
+            <div class="lot-item-id">LOT005</div>
+          </div>
+          
+          <!-- 待拍拍品 (LOT006) -->
+          <div class="lot-item">
+            <div class="lot-thumbnail" style="background-image: url('https://via.placeholder.com/80x80')"></div>
+            <div class="lot-item-id">LOT006</div>
+          </div>
+          
+          <!-- 待拍拍品 (LOT007) -->
+          <div class="lot-item">
+            <div class="lot-thumbnail" style="background-image: url('https://via.placeholder.com/80x80')"></div>
+            <div class="lot-item-id">LOT007</div>
+          </div>
+          
+          <!-- 待拍拍品 (LOT008) -->
+          <div class="lot-item">
+            <div class="lot-thumbnail" style="background-image: url('https://via.placeholder.com/80x80')"></div>
+            <div class="lot-item-id">LOT008</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="middle-section">
+      <div class="card">
+        <div class="price-cards">
+          <div class="price-card">
+            <div class="price-label">
+              当前价格 
+              <i class="fas fa-pencil-alt" style="font-size: 12px; color: #757575; margin-left: 4px;"></i>
+            </div>
+            <div class="price-value">
+              <span style="font-weight: 700;">¥</span><span id="currentPrice" 
+                   style="font-weight: 700; cursor: text;" 
+                   contenteditable="true"
+                   onkeypress="return /[0-9]/.test(event.key)"
+                   onpaste="event.preventDefault(); const text = (event.clipboardData || window.clipboardData).getData('text'); if(/^[0-9,]+$/.test(text)) { document.execCommand('insertText', false, text.replace(/,/g, '')); }"
+                   onmouseover="this.style.backgroundColor='rgba(255,158,102,0.1)'; this.style.borderRadius='4px'; this.style.padding='0 4px';"
+                   onmouseout="this.style.backgroundColor='transparent'; this.style.padding='0';"
+                   title="点击此处编辑价格">50,000</span>
+            </div>
+          </div>
+          <div class="price-card">
+            <div class="price-label">
+              下一口价 
+              <i class="fas fa-pencil-alt" style="font-size: 12px; color: #757575; margin-left: 4px;"></i>
+          </div>
+            <div class="price-value">
+              <span style="font-weight: 700;">¥</span><span id="nextPrice" 
+                   style="font-weight: 700; cursor: text;" 
+                   contenteditable="true"
+                   onkeypress="return /[0-9]/.test(event.key)"
+                   onpaste="event.preventDefault(); const text = (event.clipboardData || window.clipboardData).getData('text'); if(/^[0-9,]+$/.test(text)) { document.execCommand('insertText', false, text.replace(/,/g, '')); }"
+                   onmouseover="this.style.backgroundColor='rgba(255,158,102,0.1)'; this.style.borderRadius='4px'; this.style.padding='0 4px';"
+                   onmouseout="this.style.backgroundColor='transparent'; this.style.padding='0';"
+                   title="点击此处编辑价格">55,000</span>
+        </div>
+          </div>
+        </div>
+        
+        <div style="margin: 16px 0;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; font-size: 13px;">
+            <!-- 默认阶梯 -->
+            <div style="display: flex; align-items: center; background-color: #f5f5f5; padding: 6px 10px; border-radius: 8px; white-space: nowrap;">
+              <input type="radio" name="stepType" id="step0" style="margin-right: 4px;" checked>
+              <label for="step0">默认阶梯</label>
+        </div>
+        
+            <!-- 258阶梯 -->
+            <div style="display: flex; align-items: center; background-color: #f5f5f5; padding: 6px 10px; border-radius: 8px; white-space: nowrap;">
+              <input type="radio" name="stepType" id="step1" style="margin-right: 4px;">
+              <label for="step1">258阶梯</label>
+            </div>
+            
+            <!-- 250阶梯 -->
+            <div style="display: flex; align-items: center; background-color: #f5f5f5; padding: 6px 10px; border-radius: 8px; white-space: nowrap;">
+              <input type="radio" name="stepType" id="step2" style="margin-right: 4px;">
+              <label for="step2">250阶梯</label>
+            </div>
+            
+            <!-- 等距阶梯 -->
+            <div style="display: flex; align-items: center; background-color: #f5f5f5; padding: 6px 10px; border-radius: 8px; white-space: nowrap;">
+              <input type="radio" name="stepType" id="step3" style="margin-right: 4px;">
+              <label for="step3">等距阶梯</label>
+            </div>
+            
+            <!-- 等距阶梯数值选择 - 修改为组合式控件 -->
+            <div style="position: relative; display: flex; align-items: center; gap: 4px;">
+              <!-- 下拉三角符号 - 添加悬停事件 -->
+              <div id="dropdownTrigger" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); z-index: 1; cursor: pointer; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;" 
+                   onmouseover="document.getElementById('stepValueDropdown').style.display='block'" 
+                   onmouseout="document.getElementById('stepValueDropdown').style.display='none'">
+                <i class="fas fa-caret-down" style="font-size: 14px; color: #666;"></i>
+            </div>
+              
+              <!-- 组合式输入框 -->
+              <div style="position: relative; width: 120px;">
+                <input type="number" id="stepValueInput" min="1" value="10000" style="width: 100%; border: 1px solid #e0e0e0; background-color: white; border-radius: 8px; padding: 6px 10px 6px 28px; font-size: 13px; -moz-appearance: textfield;">
+                
+                <!-- 铅笔图标 - 添加悬停提示 -->
+                <div style="position: absolute; right: 2px; top: 50%; transform: translateY(-50%); cursor: text;" 
+                     onclick="document.getElementById('stepValueInput').focus();"
+                     title="点击编辑数值">
+                  <i class="fas fa-pencil-alt" style="font-size: 12px; color: #757575;"></i>
+                </div>
+                
+                <!-- 显式下拉菜单，鼠标悬停时显示 -->
+                <div id="stepValueDropdown" style="position: absolute; top: 100%; left: 0; width: 100%; background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; display: none;"
+                     onmouseover="this.style.display='block'" 
+                     onmouseout="this.style.display='none'">
+                  <div style="padding: 8px 12px; cursor: pointer; font-size: 13px;" onclick="document.getElementById('stepValueInput').value='100'; this.style.display='none'">100</div>
+                  <div style="padding: 8px 12px; cursor: pointer; font-size: 13px;" onclick="document.getElementById('stepValueInput').value='500'; this.style.display='none'">500</div>
+                  <div style="padding: 8px 12px; cursor: pointer; font-size: 13px;" onclick="document.getElementById('stepValueInput').value='1000'; this.style.display='none'">1000</div>
+                  <div style="padding: 8px 12px; cursor: pointer; font-size: 13px;" onclick="document.getElementById('stepValueInput').value='2000'; this.style.display='none'">2000</div>
+                  <div style="padding: 8px 12px; cursor: pointer; font-size: 13px;" onclick="document.getElementById('stepValueInput').value='5000'; this.style.display='none'">5000</div>
+                  <div style="padding: 8px 12px; cursor: pointer; font-size: 13px;" onclick="document.getElementById('stepValueInput').value='10000'; this.style.display='none'">10000</div>
+                  <div style="padding: 8px 12px; cursor: pointer; font-size: 13px;" onclick="document.getElementById('stepValueInput').value='50000'; this.style.display='none'">50000</div>
+                  <div style="padding: 8px 12px; cursor: pointer; font-size: 13px;" onclick="document.getElementById('stepValueInput').value='100000'; this.style.display='none'">100000</div>
+                </div>
+              </div>
+          </div>
+        </div>
+      </div>
+      
+        <div class="bid-buttons">
+          <!-- 电话竞价按钮 -->
+          <div class="bid-button">
+            <div class="bid-type">电话</div>
+            <div class="bid-price">¥55,000</div>
+          </div>
+          <!-- 现场竞价按钮 -->
+          <div class="bid-button">
+            <div class="bid-type">现场</div>
+            <div class="bid-price">¥55,000</div>
+          </div>
+          <!-- 网络竞价按钮 -->
+          <div class="bid-button active network">
+            <div class="bid-type">
+              网络 <span style="font-size: 14px; display: inline-block; margin-left: 4px;">C056</span>
+            </div>
+            <div class="bid-price">¥50,000</div>
+          </div>
+        </div>
+        
+        <div class="action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; grid-gap: 12px; margin-bottom: 16px;">
+          <button class="btn btn-gradient-blue" style="display: flex; justify-content: center; align-items: center; gap: 8px; padding: 16px 0; height: 60px;">
+            <i class="fas fa-undo" style="color: white; font-size: 18px;"></i>
+            <span style="font-size: 18px; font-weight: 600;">回退</span>
+          </button>
+          <button class="btn btn-gradient-red" style="display: flex; justify-content: center; align-items: center; gap: 8px; padding: 16px 0; height: 60px;" onclick="showConfirmModal('withdraw')">
+            <i class="fas fa-ban" style="color: white; font-size: 18px;"></i>
+            <span style="font-size: 18px; font-weight: 600;">撤拍</span>
+          </button>
+          <button class="btn btn-gradient-orange" style="display: flex; justify-content: center; align-items: center; gap: 8px; padding: 16px 0; height: 60px;" onclick="showConfirmModal('unsold')">
+            <i class="fas fa-times-circle" style="color: white; font-size: 18px;"></i>
+            <span style="font-size: 18px; font-weight: 600;">流拍</span>
+          </button>
+          <button class="btn btn-gradient-green" style="display: flex; justify-content: center; align-items: center; gap: 8px; padding: 16px 0; height: 60px;" onclick="showConfirmModal('sold')">
+            <i class="fas fa-check-circle" style="color: white; font-size: 18px;"></i>
+            <span style="font-size: 18px; font-weight: 600;">成交</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 信息互动和预约出价并列布局 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; grid-gap: 16px; margin-top: 16px;">
+        <!-- 信息互动部分 -->
+        <div class="card glass-card" style="margin: 0; padding: 12px;">
+          <div style="font-weight: 500; margin-bottom: 8px;">信息互动</div>
+          
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+            <div class="action-chip" style="font-size: 12px; padding: 6px 10px;" contenteditable="true">
+            竞拍即将结束
+            <i class="fas fa-pencil-alt" style="font-size: 10px;"></i>
+          </div>
+            <div class="action-chip" style="font-size: 12px; padding: 6px 10px;" contenteditable="true">
+            即将落槌
+            <i class="fas fa-pencil-alt" style="font-size: 10px;"></i>
+          </div>
+            <div class="action-chip" style="font-size: 12px; padding: 6px 10px;" contenteditable="true">
+            网络延迟请迅速出价
+            <i class="fas fa-pencil-alt" style="font-size: 10px;"></i>
+          </div>
+            <div class="action-chip" style="font-size: 12px; padding: 6px 10px;" contenteditable="true">
+              最后一次
+              <i class="fas fa-pencil-alt" style="font-size: 10px;"></i>
+            </div>
+        </div>
+        
+          <!-- 消息输入框 -->
+          <div style="display: flex; gap: 8px;">
+            <input type="text" placeholder="输入自定义消息..." style="flex: 1; padding: 8px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 14px;">
+            <button class="btn btn-primary" style="padding: 8px 12px; font-size: 14px;">
+              发送
+            </button>
+          </div>
+        </div>
+        
+        <!-- 预约出价卡片 -->
+        <div class="card glass-card" style="margin: 0; padding: 12px;">
+          <div style="font-weight: 500; margin-bottom: 8px;">预约出价</div>
+          
+          <!-- 预约出价列表 -->
+          <div style="max-height: 120px; overflow-y: auto; overflow-x: auto; white-space: nowrap;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
+              <div style="font-size: 14px; font-weight: 500; min-width: 70px;">LOT012</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="color: #757575; font-size: 12px;">***</div>
+                <div style="font-weight: 500; font-size: 14px;">C001</div>
+              </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
+              <div style="font-size: 14px; font-weight: 500; min-width: 70px;">LOT015</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="color: #757575; font-size: 12px;">***</div>
+                <div style="font-weight: 500; font-size: 14px;">C015</div>
+              </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
+              <div style="font-size: 14px; font-weight: 500; min-width: 70px;">LOT018</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="color: #757575; font-size: 12px;">***</div>
+                <div style="font-weight: 500; font-size: 14px;">C008</div>
+              </div>
+            </div>
+            
+            <!-- 添加一个超长内容的示例，以展示水平滚动效果 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
+              <div style="font-size: 14px; font-weight: 500; min-width: 70px;">LOT020</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="color: #757575; font-size: 12px;">***</div>
+                <div style="font-weight: 500; font-size: 14px;">C123456789</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="right-section">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">竞拍记录</div>
+        </div>
+        
+        <div class="bid-history">
+          <!-- 系统消息 -->
+          <div style="padding: 10px; background-color: #FFF9F0; border-left: 3px solid #FF9800; margin: 6px 0; display: flex; justify-content: space-between;">
+            <div style="color: #FF6D00; font-size: 13px;">竞拍即将结束，请及时出价</div>
+            <div style="color: #757575; font-size: 12px;">14:33:10</div>
+          </div>
+          
+          <!-- 电话买家 -->
+          <div class="history-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-phone" style="color: #757575; font-size: 12px;"></i>
+              </div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px;">电话出价</div>
+                <div style="font-size: 12px; color: #757575;">14:32:45</div>
+              </div>
+            </div>
+            <div style="font-size: 16px; font-weight: 700;">¥50,000</div>
+          </div>
+          
+          <!-- 系统消息 -->
+          <div style="padding: 10px; background-color: #FFF9F0; border-left: 3px solid #FF9800; margin: 6px 0; display: flex; justify-content: space-between;">
+            <div style="color: #FF6D00; font-size: 13px;">网络延迟，请迅速出价</div>
+            <div style="color: #757575; font-size: 12px;">14:32:00</div>
+          </div>
+          
+          <!-- 现场买家 -->
+          <div class="history-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-home" style="color: #757575; font-size: 12px;"></i>
+              </div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px;">现场出价</div>
+                <div style="font-size: 12px; color: #757575;">14:31:20</div>
+              </div>
+            </div>
+            <div style="font-size: 16px; font-weight: 700;">¥45,000</div>
+          </div>
+          
+          <!-- 网络买家 -->
+          <div class="history-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-globe" style="color: #757575; font-size: 12px;"></i>
+              </div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px;">C056</div>
+                <div style="font-size: 12px; color: #757575;">14:30:05</div>
+              </div>
+            </div>
+            <div style="font-size: 16px; font-weight: 700;">¥40,000</div>
+          </div>
+          
+          <!-- 电话买家 -->
+          <div class="history-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-phone" style="color: #757575; font-size: 12px;"></i>
+              </div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px;">电话出价</div>
+                <div style="font-size: 12px; color: #757575;">14:29:30</div>
+              </div>
+            </div>
+            <div style="font-size: 16px; font-weight: 700;">¥35,000</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card glass-card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="card-title">成交结果</div>
+          <div style="font-size: 14px; font-weight: 600; color: #E53935;">
+            合计: ¥381,000
+          </div>
+        </div>
+        
+        <div style="max-height: 200px; overflow-y: auto;">
+          <div class="result-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;">
+            <div style="font-size: 16px; font-weight: 500; color: #333;">LOT001</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="font-weight: 600; color: #E53935;">¥50,000</div>
+              <div style="font-weight: 500;">S078</div>
+              </div>
+            </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;">
+            <div style="font-size: 16px; font-weight: 500; color: #333;">LOT002</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="font-weight: 600; color: #E53935;">¥32,000</div>
+              <div style="font-weight: 500;">P023</div>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;">
+            <div style="font-size: 16px; font-weight: 500; color: #333;">LOT003</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="font-weight: 600; color: #E53935;">¥78,000</div>
+              <div style="font-weight: 500;">C015</div>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;">
+            <div style="font-size: 16px; font-weight: 500; color: #333;">LOT004</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="font-weight: 600; color: #E53935;">¥125,000</div>
+              <div style="font-weight: 500;">S045</div>
+            </div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #eee;">
+            <div style="font-size: 16px; font-weight: 500; color: #333;">LOT005</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="font-weight: 600; color: #E53935;">¥96,000</div>
+              <div style="font-weight: 500;">C008</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  <!-- 确认对话框 -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="confirm-modal">
+      <div class="confirm-modal-header">
+        <div class="confirm-modal-icon" id="modalIcon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="confirm-modal-title" id="modalTitle">确认操作</div>
+      </div>
+      <div class="confirm-modal-content" id="modalContent">
+        您确定要执行此操作吗？此操作无法撤销。
+      </div>
+      <div class="confirm-modal-actions">
+        <button class="modal-btn modal-btn-cancel" onclick="hideConfirmModal()">取消</button>
+        <button class="modal-btn modal-btn-confirm" id="modalConfirmBtn" onclick="confirmAction()">确认</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 暂停拍卖遮罩 - 改进版 -->
+  <div class="pause-overlay" id="pauseOverlay">
+    <div class="pause-container">
+      <div class="pause-status">
+        <i class="fas fa-pause-circle"></i>
+        <span>拍卖已暂停</span>
+      </div>
+      <div class="pause-button" id="resumeAuctionBtn">
+        <div class="pause-icon">
+          <i class="fas fa-play"></i>
+        </div>
+        <div class="pause-text">继续拍卖</div>
+      </div>
+      <div class="pause-message">
+        拍卖已暂停，请点击上方按钮继续。暂停期间所有竞价操作将被临时冻结。
+      </div>
+    </div>
+  </div>
+  
+  <!-- 修改起拍价对话框 -->
+  <div class="modal-overlay" id="startingPriceModal">
+    <div class="confirm-modal" style="width: 450px;">
+      <div class="confirm-modal-header">
+        <div class="confirm-modal-icon" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+          <i class="fas fa-tag"></i>
+        </div>
+        <div class="confirm-modal-title">修改起拍价</div>
+      </div>
+      <div class="confirm-modal-content">
+        <p style="margin-bottom: 20px;">将本场拍品的起拍价全部设置为：</p>
+        <div style="position: relative; margin-bottom: 20px;">
+          <div style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #333; font-weight: 600;">¥</div>
+          <input type="text" id="newStartingPrice" style="width: 100%; padding: 12px 12px 12px 30px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05) inset; transition: all 0.3s ease;" 
+                 placeholder="请输入新的起拍价"
+                 onkeypress="return /[0-9]/.test(event.key)"
+                 onpaste="event.preventDefault(); const pasteText = (event.clipboardData || window.clipboardData).getData('text'); if(/^[0-9,]+$/.test(pasteText)) { document.execCommand('insertText', false, pasteText.replace(/,/g, '')); }">
+          <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 14px;">元</div>
+        </div>
+        <p style="color: #FF9800; font-size: 13px; margin-top: -10px;"><i class="fas fa-exclamation-circle"></i> 此操作将修改所有未开始竞拍的拍品起拍价</p>
+      </div>
+      <div class="confirm-modal-actions">
+        <button class="modal-btn modal-btn-cancel" onclick="hideStartingPriceModal()">取消</button>
+        <button class="modal-btn modal-btn-confirm" style="background: linear-gradient(135deg, #3498db, #2980b9);" onclick="confirmStartingPriceChange()">确认修改</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 修改竞价阶梯对话框 -->
+  <div id="bidStepModal" class="modal" style="display: none;">
+    <!-- 模态框内容容器 -->
+    <div class="confirm-modal">
+        <h3>修改竞价阶梯</h3>
+        <!-- 竞价阶梯设置区域 -->
+        <div id="bidStepRows">
+            <!-- 单个价格区间和加价幅度设置行 -->
+            <div class="bid-step-row">
+                <!-- 价格区间输入区域 -->
+                <div class="range-container">
+                    <input type="number" class="range-input" placeholder="输入价格区间">
+                </div>
+                <!-- 加价幅度输入区域 -->
+                <div class="step-values">
+                    <div class="step-group">
+                        <input type="number" class="step-input" placeholder="输入加价幅度">
+                        <button class="add-step">+</button>
+                    </div>
+                </div>
+            </div>
+            <!-- 添加新区间按钮容器 -->
+            <div class="add-row-container">
+                <button onclick="addBidStepRow()" class="add-row">添加价格区间</button>
+            </div>
+        </div>
+        <!-- 模态框底部按钮 -->
+        <div class="modal-footer">
+            <button onclick="hideBidStepModal()">取消</button>
+            <button onclick="confirmBidStepChange()">确定</button>
+        </div>
+    </div>
+  </div>
+  
+  <!-- 投屏选项弹出菜单 -->
+  <div class="cast-options" id="castOptions">
+    <h4>选择屏幕比例</h4>
+    <div class="cast-option-list">
+      <div class="cast-option" id="ratio169" onclick="selectCastOption(this, '16:9')">
+        <div class="cast-option-icon">
+          <div class="ratio-16-9"></div>
+        </div>
+        <div class="cast-option-label">16:9 宽屏</div>
+        <div class="cast-option-desc">适合大多数显示器</div>
+      </div>
+      <div class="cast-option" id="ratio34" onclick="selectCastOption(this, '3:4')">
+        <div class="cast-option-icon">
+          <div class="ratio-3-4"></div>
+        </div>
+        <div class="cast-option-label">3:4 竖屏</div>
+        <div class="cast-option-desc">适合平板竖屏</div>
+      </div>
+      <div class="cast-option" id="ratio11" onclick="selectCastOption(this, '1:1')">
+        <div class="cast-option-icon">
+          <div class="ratio-1-1"></div>
+        </div>
+        <div class="cast-option-label">1:1 方形</div>
+        <div class="cast-option-desc">适合方形屏</div>
+      </div>
+    </div>
+    <div class="cast-buttons">
+      <button class="cast-cancel-btn" onclick="hideCastOptions()">取消</button>
+      <button class="cast-confirm-btn" onclick="confirmCastScreen()">确定</button>
+    </div>
+  </div>
+  
+  <!-- 重新设计投屏选项对话框 -->
+  <div id="castScreenOverlay" class="cast-overlay"></div>
+  <div id="castScreenOptions">
+    <h4>选择屏幕比例</h4>
+    <div class="cast-option-list">
+      <div class="cast-option" data-ratio="16:9">
+        <div class="cast-icon">
+          <div class="ratio-16-9"></div>
+        </div>
+        <div class="cast-label">16:9 宽屏</div>
+        <div class="cast-desc">适合大多数显示器</div>
+      </div>
+      <div class="cast-option" data-ratio="3:4">
+        <div class="cast-icon">
+          <div class="ratio-3-4"></div>
+        </div>
+        <div class="cast-label">3:4 竖屏</div>
+        <div class="cast-desc">适合平板竖屏</div>
+      </div>
+      <div class="cast-option" data-ratio="1:1">
+        <div class="cast-icon">
+          <div class="ratio-1-1"></div>
+        </div>
+        <div class="cast-label">1:1 方形</div>
+        <div class="cast-desc">适合方形屏</div>
+      </div>
+    </div>
+    <div class="cast-actions">
+      <button class="cast-btn cast-cancel" id="castCancelBtn">取消</button>
+      <button class="cast-btn cast-confirm" id="castConfirmBtn">确定</button>
+    </div>
+  </div>
+  
+  <!-- 投屏模态框 -->
+  <div id="screenCastModal">
+    <div class="cast-dialog">
+      <h3 class="cast-title">选择屏幕比例</h3>
+      <div class="cast-options">
+        <div class="cast-option" data-ratio="16:9">
+          <div class="ratio-box ratio-16-9"></div>
+          <div class="cast-option-name">16:9 宽屏</div>
+          <div class="cast-option-desc">适合大多数显示器</div>
+        </div>
+        <div class="cast-option" data-ratio="3:4">
+          <div class="ratio-box ratio-3-4"></div>
+          <div class="cast-option-name">3:4 竖屏</div>
+          <div class="cast-option-desc">适合平板竖屏</div>
+        </div>
+        <div class="cast-option" data-ratio="1:1">
+          <div class="ratio-box ratio-1-1"></div>
+          <div class="cast-option-name">1:1 方形</div>
+          <div class="cast-option-desc">适合方形屏</div>
+        </div>
+      </div>
+      <div class="cast-buttons">
+        <button class="cast-btn cast-cancel" id="castCancelBtn">取消</button>
+        <button class="cast-btn cast-confirm" id="castConfirmBtn">确定</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    /**
+     * 切换竞价按钮的激活状态
+     * 此函数控制网络按钮的激活状态，电话和现场按钮始终保持灰色
+     */
+    function toggleNetworkButtonState() {
+      const bidButtons = document.querySelectorAll('.bid-button');
+      const networkButton = bidButtons[2]; // 网络按钮是第三个按钮
+      
+      // 切换网络按钮的激活状态
+      if (networkButton.classList.contains('active')) {
+        // 如果当前是激活状态，则取消激活
+        networkButton.classList.remove('active', 'network');
+      } else {
+        // 如果当前不是激活状态，则激活
+        networkButton.classList.add('active', 'network');
+      }
+      
+      // 确保电话和现场按钮始终不激活
+      bidButtons[0].classList.remove('active', 'phone');
+      bidButtons[1].classList.remove('active', 'venue');
+    }
+    
+    // 每隔10秒切换一次网络按钮的状态
+    setInterval(toggleNetworkButtonState, 10000);
+    
+    // 初始化时，确保电话和现场按钮不激活，网络按钮可能激活
+    document.addEventListener('DOMContentLoaded', function() {
+      const bidButtons = document.querySelectorAll('.bid-button');
+      
+      // 确保电话和现场按钮不激活
+      bidButtons[0].classList.remove('active', 'phone');
+      bidButtons[1].classList.remove('active', 'venue');
+      
+      // 随机决定网络按钮是否激活
+      if (Math.random() > 0.5) {
+        bidButtons[2].classList.add('active', 'network');
+      } else {
+        bidButtons[2].classList.remove('active', 'network');
+      }
+      
+      // 为结束拍卖按钮添加确认对话框
+      document.querySelector('.auction-controls .btn-danger').addEventListener('click', function() {
+        showConfirmModal('end');
+      });
+      
+      // 为暂停拍卖按钮添加事件监听
+      document.getElementById('pauseAuctionBtn').addEventListener('click', function() {
+        pauseAuction();
+      });
+      
+      // 为继续拍卖按钮添加事件监听
+      document.getElementById('resumeAuctionBtn').addEventListener('click', function() {
+        resumeAuction();
+      });
+    });
+    
+    /**
+     * 暂停拍卖
+     */
+    function pauseAuction() {
+      const pauseOverlay = document.getElementById('pauseOverlay');
+      pauseOverlay.classList.add('active');
+      
+      // 可以在这里添加其他暂停逻辑，如停止计时器等
+      console.log('拍卖已暂停');
+    }
+    
+    /**
+     * 继续拍卖
+     */
+    function resumeAuction() {
+      const pauseOverlay = document.getElementById('pauseOverlay');
+      pauseOverlay.classList.remove('active');
+      
+      // 可以在这里添加其他恢复逻辑，如恢复计时器等
+      console.log('拍卖已继续');
+    }
+    
+    // 当前确认的操作类型
+    let currentAction = '';
+    
+    /**
+     * 显示确认对话框
+     * @param {string} action - 操作类型：'end'(结束拍卖), 'sold'(成交), 'withdraw'(撤拍), 'unsold'(流拍)
+     */
+    function showConfirmModal(action) {
+      currentAction = action;
+      const modal = document.getElementById('confirmModal');
+      const modalIcon = document.getElementById('modalIcon');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalContent = document.getElementById('modalContent');
+      const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+      
+      // 根据不同操作类型设置不同的对话框内容和样式
+      switch(action) {
+        case 'end':
+          modalIcon.className = 'confirm-modal-icon danger';
+          modalIcon.innerHTML = '<i class="fas fa-power-off"></i>';
+          modalTitle.textContent = '确认结束拍卖';
+          modalContent.textContent = '您确定要结束本场拍卖吗？此操作将结束所有拍品的竞拍流程。';
+          modalConfirmBtn.className = 'modal-btn modal-btn-confirm danger';
+          break;
+        case 'sold':
+          modalIcon.className = 'confirm-modal-icon success';
+          modalIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+          modalTitle.textContent = '确认成交';
+          modalContent.textContent = '您确定要将当前拍品标记为成交吗？';
+          modalConfirmBtn.className = 'modal-btn modal-btn-confirm success';
+          break;
+        case 'withdraw':
+          modalIcon.className = 'confirm-modal-icon danger';
+          modalIcon.innerHTML = '<i class="fas fa-ban"></i>';
+          modalTitle.textContent = '确认撤拍';
+          modalContent.textContent = '您确定要将当前拍品标记为撤拍吗？';
+          modalConfirmBtn.className = 'modal-btn modal-btn-confirm danger';
+          break;
+        case 'unsold':
+          modalIcon.className = 'confirm-modal-icon warning';
+          modalIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
+          modalTitle.textContent = '确认流拍';
+          modalContent.textContent = '您确定要将当前拍品标记为流拍吗？';
+          modalConfirmBtn.className = 'modal-btn modal-btn-confirm warning';
+          break;
+      }
+      
+      // 显示对话框
+      modal.classList.add('active');
+    }
+    
+    /**
+     * 隐藏确认对话框
+     */
+    function hideConfirmModal() {
+      const modal = document.getElementById('confirmModal');
+      modal.classList.remove('active');
+    }
+    
+    /**
+     * 确认执行操作
+     */
+    function confirmAction() {
+      // 这里可以根据currentAction执行相应的操作
+      console.log('执行操作:', currentAction);
+      
+      // 模拟操作执行
+      switch(currentAction) {
+        case 'end':
+          alert('拍卖已结束');
+          break;
+        case 'sold':
+          alert('拍品已成交');
+          break;
+        case 'withdraw':
+          alert('拍品已撤拍');
+          break;
+        case 'unsold':
+          alert('拍品已流拍');
+          break;
+      }
+      
+      // 隐藏对话框
+      hideConfirmModal();
+    }
+    
+    /**
+     * 显示修改起拍价对话框
+     */
+    function showStartingPriceModal() {
+      const modal = document.getElementById('startingPriceModal');
+      modal.classList.add('active');
+      
+      // 聚焦到输入框
+      setTimeout(() => {
+        document.getElementById('newStartingPrice').focus();
+      }, 300);
+    }
+    
+    /**
+     * 隐藏修改起拍价对话框
+     */
+    function hideStartingPriceModal() {
+      const modal = document.getElementById('startingPriceModal');
+      modal.classList.remove('active');
+      
+      // 清空输入框
+      document.getElementById('newStartingPrice').value = '';
+    }
+    
+    /**
+     * 确认修改起拍价
+     */
+    function confirmStartingPriceChange() {
+      const newPrice = document.getElementById('newStartingPrice').value;
+      
+      if (!newPrice || newPrice.trim() === '') {
+        alert('请输入有效的起拍价');
+        return;
+      }
+      
+      // 格式化价格显示，添加千位分隔符
+      const formattedPrice = Number(newPrice).toLocaleString('zh-CN');
+      
+      // 这里可以添加实际的修改起拍价逻辑
+      console.log('修改起拍价为:', newPrice);
+      
+      // 更新页面上的起拍价显示（示例）
+      const priceElements = document.querySelectorAll('.info-row .label');
+      priceElements.forEach(element => {
+        if (element.textContent === '起拍价:') {
+          element.nextElementSibling.textContent = `¥${formattedPrice}`;
+        }
+      });
+      
+      // 显示成功提示
+      alert(`已成功将所有未开始竞拍的拍品起拍价修改为 ¥${formattedPrice}`);
+      
+      // 隐藏对话框
+      hideStartingPriceModal();
+    }
+
+    // 确保在页面加载完成后绑定事件
+    document.addEventListener('DOMContentLoaded', function() {
+      // 查找并绑定"修改竞价阶梯"按钮的点击事件
+      const bidStepButtons = document.querySelectorAll('.dropdown-item');
+      bidStepButtons.forEach(button => {
+        if (button.textContent.trim() === '修改竞价阶梯') {
+          button.addEventListener('click', function(e) {
+            e.preventDefault();
+            showBidStepModal();
+          });
+        }
+      });
+    });
+
+    function showBidStepModal() {
+      const modal = document.getElementById('bidStepModal');
+      modal.style.display = 'block';
+      modal.classList.add('active');
+    }
+
+    function hideBidStepModal() {
+      const modal = document.getElementById('bidStepModal');
+      modal.style.display = 'none';
+      modal.classList.remove('active');
+    }
+
+    function addStepValue(intervalIndex) {
+      const stepValues = document.querySelectorAll('.bid-step-row')[intervalIndex].querySelector('.step-values');
+      const lastStepGroup = stepValues.lastElementChild;
+      const lastInput = lastStepGroup.querySelector('.step-input');
+      const lastValue = parseInt(lastInput.value.replace(/,/g, ''));
+      
+      // 隐藏上一个加号按钮，替换为减号按钮
+      const prevAddBtn = lastStepGroup.querySelector('.add-step');
+      if (prevAddBtn) {
+        prevAddBtn.style.display = 'none';
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-step';
+        removeBtn.innerHTML = '-';
+        removeBtn.onclick = () => {
+          lastStepGroup.remove();
+          // 显示新的最后一个组的加号按钮
+          const newLastGroup = stepValues.lastElementChild;
+          if (newLastGroup) {
+            const hiddenAddBtn = newLastGroup.querySelector('.add-step');
+            if (hiddenAddBtn) hiddenAddBtn.style.display = 'flex';
+          }
+        };
+        lastStepGroup.appendChild(removeBtn);
+      }
+      
+      // 创建新的加价幅度组
+      const stepGroup = document.createElement('div');
+      stepGroup.className = 'step-group';
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'step-input';
+      input.value = lastValue * 2;
+      
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-step';
+      addBtn.innerHTML = '+';
+      addBtn.onclick = () => addStepValue(intervalIndex);
+      
+      stepGroup.appendChild(input);
+      stepGroup.appendChild(addBtn);
+      stepValues.appendChild(stepGroup);
+    }
+
+    function addBidStepRow() {
+      const rows = document.querySelectorAll('.bid-step-row');
+      const lastRow = rows[rows.length - 2];
+      const lastRangeValue = parseInt(lastRow.querySelector('.range-input').value.replace(/,/g, ''));
+      
+      const newRow = document.createElement('div');
+      newRow.className = 'bid-step-row';
+      
+      const priceRange = document.createElement('div');
+      priceRange.className = 'price-range';
+      
+      const rangeInput = document.createElement('input');
+      rangeInput.type = 'text';
+      rangeInput.className = 'range-input';
+      rangeInput.value = lastRangeValue * 2;
+      
+      const stepValues = document.createElement('div');
+      stepValues.className = 'step-values';
+      
+      const stepGroup = document.createElement('div');
+      stepGroup.className = 'step-group';
+      
+      const stepInput = document.createElement('input');
+      stepInput.type = 'text';
+      stepInput.className = 'step-input';
+      stepInput.value = lastRangeValue / 5;
+      
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-step';
+      addBtn.innerHTML = '+';
+      addBtn.onclick = () => addStepValue(rows.length - 2);
+      
+      stepGroup.appendChild(stepInput);
+      stepGroup.appendChild(addBtn);
+      stepValues.appendChild(stepGroup);
+      priceRange.appendChild(rangeInput);
+      newRow.appendChild(priceRange);
+      newRow.appendChild(stepValues);
+      
+      const container = document.getElementById('bidStepRows');
+      container.insertBefore(newRow, container.lastElementChild);
+    }
+
+    function removeBidStepRow() {
+      const rows = document.querySelectorAll('.bid-step-row');
+      if (rows.length <= 3) {
+        alert('至少需要保留一个价格区间！');
+        return;
+      }
+      rows[rows.length - 2].remove();
+    }
+
+    function confirmBidStepChange() {
+      const bidSteps = [];
+      const rows = document.querySelectorAll('.bid-step-row');
+      
+      for (let i = 0; i < rows.length - 1; i++) {
+        const row = rows[i];
+        const rangeValue = row.querySelector('.range-input').value;
+        const stepInputs = row.querySelectorAll('.step-input');
+        const steps = Array.from(stepInputs).map(input => input.value);
+        
+        bidSteps.push({
+          range: rangeValue,
+          steps: steps
+        });
+      }
+      
+      console.log('修改后的竞价阶梯:', bidSteps);
+      alert('竞价阶梯修改成功！');
+      hideBidStepModal();
+    }
+    
+    // 当前选中的屏幕比例
+    let selectedRatio = null;
+    
+    // 显示投屏选项
+    function showCastOptions(event) {
+      console.log("显示投屏选项");
+      const castOptions = document.getElementById('castOptions');
+      
+      if (!castOptions) {
+        console.error("找不到投屏选项元素");
+        return;
+      }
+      
+      // 获取点击位置来确定菜单位置
+      const x = event.clientX || event.pageX;
+      const y = event.clientY || event.pageY;
+      
+      // 定位弹出菜单 - 接近点击位置但稍微偏移以便看清楚
+      castOptions.style.display = 'block';
+      castOptions.style.position = 'fixed';
+      
+      // 根据屏幕边界调整位置，避免超出视口
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const menuWidth = 340; // 菜单宽度
+      const menuHeight = 260; // 估计的菜单高度
+      
+      // 计算最佳位置，避免超出屏幕
+      let leftPos = x - 50;
+      let topPos = y + 20;
+      
+      // 右边界检查
+      if (leftPos + menuWidth > viewportWidth) {
+        leftPos = viewportWidth - menuWidth - 10;
+      }
+      
+      // 左边界检查
+      if (leftPos < 10) {
+        leftPos = 10;
+      }
+      
+      // 底部边界检查
+      if (topPos + menuHeight > viewportHeight) {
+        topPos = y - menuHeight - 10;
+      }
+      
+      castOptions.style.top = `${topPos}px`;
+      castOptions.style.left = `${leftPos}px`;
+      
+      // 防止点击事件冒泡
+      event.stopPropagation();
+      
+      // 点击其他区域关闭菜单
+      setTimeout(() => {
+        document.addEventListener('click', closeCastOptionsOnClickOutside);
+      }, 10);
+    }
+    
+    // 隐藏投屏选项
+    function hideCastOptions() {
+      const castOptions = document.getElementById('castOptions');
+      if (castOptions) {
+        castOptions.style.display = 'none';
+      }
+      document.removeEventListener('click', closeCastOptionsOnClickOutside);
+    }
+    
+    // 点击外部区域关闭菜单
+    function closeCastOptionsOnClickOutside(event) {
+      const castOptions = document.getElementById('castOptions');
+      const castBtn = document.getElementById('castScreenBtn');
+      
+      if (castOptions && !castOptions.contains(event.target) && event.target !== castBtn) {
+        hideCastOptions();
+      }
+    }
+    
+    // 选择投屏比例
+    function selectCastOption(element, ratio) {
+      // 移除之前的选中状态
+      const options = document.querySelectorAll('.cast-option');
+      options.forEach(option => {
+        option.classList.remove('selected');
+      });
+      
+      // 添加新的选中状态
+      element.classList.add('selected');
+      selectedRatio = ratio;
+    }
+    
+    // 确认投屏
+    function confirmCastScreen() {
+      if (!selectedRatio) {
+        alert('请选择一个屏幕比例');
+        return;
+      }
+      
+      // 这里实现投屏逻辑
+      console.log(`开始投屏，屏幕比例: ${selectedRatio}`);
+      alert(`投屏已启动，屏幕比例: ${selectedRatio}`);
+      
+      // 重置并隐藏菜单
+      selectedRatio = null;
+      const options = document.querySelectorAll('.cast-option');
+      options.forEach(option => {
+        option.classList.remove('selected');
+      });
+      hideCastOptions();
+    }
+    
+    // 确保DOM加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+      // 找到更多操作按钮和菜单
+      addCastOptionToMenu();
+      
+      // 移除所有单独的投屏按钮
+      const castBtns = document.querySelectorAll('.cast-screen-btn');
+      castBtns.forEach(btn => btn.remove());
+    });
+    
+    // 单独定义添加投屏选项到菜单的函数，方便重复调用
+    function addCastOptionToMenu() {
+      // 尝试不同的选择器找到更多操作菜单
+      let moreMenu = document.querySelector('.dropdown-menu');
+      
+      // 如果找不到标准下拉菜单，尝试查找其他可能的菜单
+      if (!moreMenu) {
+        const allMenus = document.querySelectorAll('ul');
+        for (const menu of allMenus) {
+          // 查找可能包含"更多操作"字样的菜单
+          if (menu.textContent.includes('更多') || menu.textContent.includes('操作')) {
+            moreMenu = menu;
+            break;
+          }
+        }
+      }
+      
+      if (moreMenu) {
+        // 检查是否已存在投屏选项，避免重复添加
+        const existingCastOption = Array.from(moreMenu.children).find(item => 
+          item.textContent.includes('投屏'));
+          
+        if (!existingCastOption) {
+          // 创建投屏菜单项
+          const castMenuItem = document.createElement('li');
+          const castMenuLink = document.createElement('a');
+          castMenuLink.className = 'dropdown-item';
+          castMenuLink.href = 'javascript:void(0)';
+          castMenuLink.innerHTML = '<i class="iconfont icon-screen">&#xe63a;</i> 投屏';
+          castMenuLink.onclick = function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            showCastOptions(event);
+          };
+          
+          castMenuItem.appendChild(castMenuLink);
+          moreMenu.appendChild(castMenuItem);
+          console.log('投屏选项已添加到菜单');
+        }
+      } else {
+        console.error('未找到更多操作菜单');
+        // 如果找不到菜单，可以尝试在页面加载后延迟一段时间再次尝试
+        setTimeout(addCastOptionToMenu, 1000);
+      }
+    }
+    
+    // 显示投屏选项
+    function showCastOptions(event) {
+      console.log("显示投屏选项");
+      const castOptions = document.getElementById('castOptions');
+      
+      if (!castOptions) {
+        console.error("找不到投屏选项元素");
+        alert("无法加载投屏选项，请刷新页面再试");
+        return;
+      }
+      
+      // 获取点击位置来确定菜单位置
+      const x = event.clientX || event.pageX;
+      const y = event.clientY || event.pageY;
+      
+      // 确保菜单在视口内
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const menuWidth = 340; // 菜单宽度
+      const menuHeight = 260; // 估计的菜单高度
+      
+      // 计算位置，优先显示在点击位置下方
+      let leftPos = Math.max(10, Math.min(x - 50, viewportWidth - menuWidth - 10));
+      let topPos = y + 10;
+      
+      // 如果会超出底部，则显示在点击位置上方
+      if (topPos + menuHeight > viewportHeight) {
+        topPos = Math.max(10, y - menuHeight - 10);
+      }
+      
+      // 设置菜单位置并显示
+      castOptions.style.position = 'fixed';
+      castOptions.style.top = `${topPos}px`;
+      castOptions.style.left = `${leftPos}px`;
+      castOptions.style.display = 'block';
+      castOptions.style.zIndex = '9999'; // 确保显示在最上层
+      
+      // 阻止事件冒泡
+      event.stopPropagation();
+      
+      // 添加点击外部区域关闭菜单
+      setTimeout(() => {
+        document.addEventListener('click', closeCastOptionsOnClickOutside);
+      }, 10);
+    }
+    
+    // 点击外部区域关闭菜单
+    function closeCastOptionsOnClickOutside(event) {
+      const castOptions = document.getElementById('castOptions');
+      
+      if (castOptions && !castOptions.contains(event.target)) {
+        hideCastOptions();
+      }
+    }
+    
+    // 隐藏投屏选项
+    function hideCastOptions() {
+      const castOptions = document.getElementById('castOptions');
+      if (castOptions) {
+        castOptions.style.display = 'none';
+      }
+      document.removeEventListener('click', closeCastOptionsOnClickOutside);
+    }
+    
+    // 选择投屏比例
+    function selectCastOption(element, ratio) {
+      // 移除之前的选中状态
+      const options = document.querySelectorAll('.cast-option');
+      options.forEach(option => {
+        option.classList.remove('selected');
+      });
+      
+      // 添加新的选中状态
+      element.classList.add('selected');
+      selectedRatio = ratio;
+      console.log(`已选择屏幕比例: ${ratio}`);
+    }
+    
+    // 确认投屏
+    function confirmCastScreen() {
+      if (!selectedRatio) {
+        alert('请选择一个屏幕比例');
+        return;
+      }
+      
+      // 这里实现投屏逻辑
+      console.log(`开始投屏，屏幕比例: ${selectedRatio}`);
+      alert(`投屏已启动，屏幕比例: ${selectedRatio}`);
+      
+      // 重置并隐藏菜单
+      selectedRatio = null;
+      const options = document.querySelectorAll('.cast-option');
+      options.forEach(option => {
+        option.classList.remove('selected');
+      });
+      hideCastOptions();
+    }
+    
+    // 投屏功能相关代码
+    (function() {
+      // 存储当前选中的屏幕比例
+      let selectedRatio = null;
+      
+      // 在页面加载完成后执行
+      document.addEventListener('DOMContentLoaded', function() {
+        // 初始化事件监听
+        initCastScreenEvents();
+        
+        // 清理旧的投屏按钮和弹窗
+        cleanupOldCastElements();
+        
+        // 添加投屏选项到更多操作菜单
+        addCastToMoreMenu();
+      });
+      
+      // 添加到全局作用域便于直接调用
+      window.openCastOptions = function() {
+        console.log('显示投屏选项');
+        document.getElementById('castScreenOverlay').style.display = 'block';
+        document.getElementById('castScreenOptions').style.display = 'block';
+      };
+      
+      // 初始化投屏相关事件
+      function initCastScreenEvents() {
+        // 选项点击事件
+        const options = document.querySelectorAll('.cast-option');
+        options.forEach(option => {
+          option.addEventListener('click', function() {
+            // 清除之前的选中状态
+            options.forEach(opt => opt.classList.remove('selected'));
+            // 设置新的选中状态
+            this.classList.add('selected');
+            // 保存选中的比例
+            selectedRatio = this.getAttribute('data-ratio');
+            console.log('选中比例:', selectedRatio);
+          });
+        });
+        
+        // 取消按钮
+        document.getElementById('castCancelBtn').addEventListener('click', function() {
+          closeCastOptions();
+        });
+        
+        // 确认按钮
+        document.getElementById('castConfirmBtn').addEventListener('click', function() {
+          if (!selectedRatio) {
+            alert('请选择一个屏幕比例');
+            return;
+          }
+          
+          // 执行投屏
+          console.log('开始投屏，比例:', selectedRatio);
+          alert('投屏已启动，屏幕比例: ' + selectedRatio);
+          
+          // 关闭弹窗并重置选择
+          closeCastOptions();
+          resetCastSelection();
+        });
+        
+        // 点击遮罩层关闭
+        document.getElementById('castScreenOverlay').addEventListener('click', function() {
+          closeCastOptions();
+        });
+      }
+      
+      // 关闭投屏选项
+      function closeCastOptions() {
+        document.getElementById('castScreenOverlay').style.display = 'none';
+        document.getElementById('castScreenOptions').style.display = 'none';
+      }
+      
+      // 重置选择状态
+      function resetCastSelection() {
+        selectedRatio = null;
+        const options = document.querySelectorAll('.cast-option');
+        options.forEach(opt => opt.classList.remove('selected'));
+      }
+      
+      // 清理旧的投屏元素
+      function cleanupOldCastElements() {
+        // 移除旧的投屏按钮
+        const oldButtons = document.querySelectorAll('.cast-screen-btn');
+        oldButtons.forEach(btn => btn.remove());
+        
+        // 移除旧的投屏选项
+        const oldOptions = document.getElementById('castOptions');
+        if (oldOptions) oldOptions.remove();
+      }
+      
+      // 添加投屏到更多操作菜单
+      function addCastToMoreMenu() {
+        // 直接修改DOM，手动添加投屏选项
+        setTimeout(function() {
+          const menuItems = document.querySelectorAll('.dropdown-menu li a, .dropdown-menu a, ul.more-menu li a, ul.more-menu a');
+          
+          // 遍历菜单项，查找"开启视频"选项
+          let videoMenuItem = null;
+          for (let i = 0; i < menuItems.length; i++) {
+            if (menuItems[i].textContent.includes('开启视频')) {
+              videoMenuItem = menuItems[i];
+              break;
+            }
+          }
+          
+          // 如果找到视频菜单项，在其前面添加投屏选项
+          if (videoMenuItem) {
+            const parentElement = videoMenuItem.parentElement.tagName === 'LI' 
+              ? videoMenuItem.parentElement.parentElement 
+              : videoMenuItem.parentElement;
+            
+            const newItem = document.createElement(videoMenuItem.parentElement.tagName === 'LI' ? 'li' : 'div');
+            newItem.innerHTML = `<a href="javascript:void(0)" class="dropdown-item" onclick="openCastOptions()">
+              <i class="iconfont">&#xe63a;</i> 投屏
+            </a>`;
+            
+            parentElement.insertBefore(newItem, videoMenuItem.parentElement.tagName === 'LI' ? videoMenuItem.parentElement : videoMenuItem);
+            console.log('投屏选项已添加到菜单');
+          } else {
+            // 如果找不到视频选项，尝试找到任何下拉菜单
+            const anyMenu = document.querySelector('.dropdown-menu, ul.more-menu');
+            if (anyMenu) {
+              const newItem = document.createElement('li');
+              newItem.innerHTML = `<a href="javascript:void(0)" onclick="openCastOptions()">
+                <i class="iconfont">&#xe63a;</i> 投屏
+              </a>`;
+              anyMenu.appendChild(newItem);
+              console.log('投屏选项已添加到菜单');
+            } else {
+              console.error('找不到更多操作菜单');
+            }
+          }
+        }, 500); // 延迟执行，确保DOM已加载
+      }
+    })();
+    
+    // 投屏功能
+    document.addEventListener('DOMContentLoaded', function() {
+      // 让投屏功能在全局可用
+      window.openScreenCastModal = openScreenCastModal;
+      
+      // 初始化投屏功能
+      initScreenCast();
+      
+      // 添加到更多操作菜单
+      setTimeout(addCastToMenu, 500);
+      
+      // 清理旧的投屏元素
+      cleanupOldCastElements();
+    });
+    
+    // 初始化投屏功能
+    function initScreenCast() {
+      // 获取元素
+      const modal = document.getElementById('screenCastModal');
+      const options = document.querySelectorAll('.cast-option');
+      const cancelBtn = document.getElementById('castCancelBtn');
+      const confirmBtn = document.getElementById('castConfirmBtn');
+      
+      // 选项点击事件
+      options.forEach(option => {
+        option.addEventListener('click', function() {
+          options.forEach(opt => opt.classList.remove('selected'));
+          this.classList.add('selected');
+          window.selectedScreenRatio = this.getAttribute('data-ratio');
+        });
+      });
+      
+      // 取消按钮
+      cancelBtn.addEventListener('click', function() {
+        closeScreenCastModal();
+      });
+      
+      // 确认按钮
+      confirmBtn.addEventListener('click', function() {
+        if (!window.selectedScreenRatio) {
+          alert('请选择一个屏幕比例');
+          return;
+        }
+        
+        alert('开始投屏，比例: ' + window.selectedScreenRatio);
+        closeScreenCastModal();
+        resetScreenCastSelection();
+      });
+      
+      // 点击背景关闭
+      modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+          closeScreenCastModal();
+        }
+      });
+    }
+    
+    // 打开投屏模态框
+    function openScreenCastModal() {
+      const modal = document.getElementById('screenCastModal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    }
+    
+    // 关闭投屏模态框
+    function closeScreenCastModal() {
+      const modal = document.getElementById('screenCastModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+    
+    // 重置选择
+    function resetScreenCastSelection() {
+      window.selectedScreenRatio = null;
+      document.querySelectorAll('.cast-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+    }
+    
+    // 清理旧的投屏元素
+    function cleanupOldCastElements() {
+      // 移除旧的投屏选项
+      const oldOptions = document.getElementById('castOptions');
+      if (oldOptions) oldOptions.remove();
+      
+      const oldOverlay = document.getElementById('castScreenOverlay');
+      if (oldOverlay) oldOverlay.remove();
+      
+      const oldModal = document.getElementById('castScreenOptions');
+      if (oldModal) oldModal.remove();
+      
+      // 删除旧的全局变量
+      if (window.selectedRatio !== undefined) {
+        delete window.selectedRatio;
+      }
+    }
+    
+    // 添加到更多操作菜单
+    function addCastToMenu() {
+      console.log('开始添加投屏到菜单');
+      
+      // 查找所有下拉菜单
+      const menus = document.querySelectorAll('.dropdown-menu, .menu-dropdown, ul[class*="menu"], .more-menu, ul');
+      
+      if (menus.length > 0) {
+        console.log('找到', menus.length, '个可能的菜单');
+        
+        let menuFound = false;
+        
+        // 遍历所有可能的菜单
+        menus.forEach(menu => {
+          // 检查是否包含"开启视频"选项
+          const menuText = menu.textContent || '';
+          if (menuText.includes('开启视频') || menuText.includes('更多操作')) {
+            console.log('找到合适的菜单:', menuText.substring(0, 20), '...');
+            
+            // 创建投屏菜单项
+            const castItem = document.createElement('li');
+            castItem.innerHTML = `
+              <a href="javascript:void(0)" style="display:flex; align-items:center; padding:8px 15px;">
+                <span style="display:inline-block; width:20px; text-align:center; margin-right:8px;">
+                  <i class="iconfont" style="font-size:16px;">&#xe63a;</i>
+                </span>
+                <span>投屏</span>
+              </a>
+            `;
+            
+            // 添加点击事件
+            castItem.querySelector('a').addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('点击了投屏菜单项');
+              openScreenCastModal();
+              
+              // 尝试关闭下拉菜单
+              const dropdown = menu.closest('.dropdown, .dropdown-menu, .menu-dropdown');
+              if (dropdown) {
+                dropdown.classList.remove('show', 'open', 'active');
+              }
+            });
+            
+            // 添加到菜单
+            menu.appendChild(castItem);
+            console.log('投屏选项已添加到菜单');
+            menuFound = true;
+          }
+        });
+        
+        if (!menuFound) {
+          console.log('未找到合适的菜单，将尝试添加到第一个菜单');
+          // 添加到第一个菜单
+          const firstMenu = menus[0];
+          const castItem = document.createElement('li');
+          castItem.innerHTML = `
+            <a href="javascript:void(0)" style="display:flex; align-items:center; padding:8px 15px;">
+              <span style="display:inline-block; width:20px; text-align:center; margin-right:8px;">
+                <i class="iconfont" style="font-size:16px;">&#xe63a;</i>
+              </span>
+              <span>投屏</span>
+            </a>
+          `;
+          
+          castItem.querySelector('a').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openScreenCastModal();
+          });
+          
+          firstMenu.appendChild(castItem);
+          console.log('投屏选项已添加到第一个菜单');
+        }
+      } else {
+        console.log('未找到任何菜单');
+      }
+    }
+  </script>
+</body>
+</html>

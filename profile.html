@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF8C00, #FFA500);
+            --device-width: 375px;
+            --device-height: 812px;
+            --device-frame-width: 410px;
+            --device-frame-height: 847px;
+            --device-border-radius: 55px;
+            --screen-border-radius: 47px;
+            --ios-background: #F2F2F7;
+            --ios-card-background: #FFFFFF;
+            --ios-primary: #FF9500;
+            --ios-secondary: #5856D6;
+            --ios-text-primary: #000000;
+            --ios-text-secondary: #6C6C70;
+            --ios-border: rgba(60, 60, 67, 0.1);
+            --bg-gradient: linear-gradient(to bottom, rgba(255, 153, 85, 0.95), rgba(255, 224, 178, 0.95));
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 设备外框样式 */
+        .device-frame {
+            width: var(--device-frame-width);
+            height: var(--device-frame-height);
+            background: #1a1a1a;
+            border-radius: var(--device-border-radius);
+            padding: 10px;
+            position: relative;
+            box-shadow: 
+                0 50px 100px -20px rgba(50, 50, 93, 0.15),
+                0 30px 60px -30px rgba(0, 0, 0, 0.2);
+            margin: 40px auto;
+            border: 0.5px solid #2a2a2a;
+        }
+
+        /* 设备按钮样式 */
+        .device-btns {
+            position: absolute;
+            right: -0.5px;
+            top: 110px;
+            width: 1px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .device-btn {
+            width: 1px;
+            height: 25px;
+            background: #2a2a2a;
+            border-radius: 0.5px;
+        }
+
+        .device-power-btn {
+            position: absolute;
+            left: -0.5px;
+            top: 110px;
+            width: 1px;
+            height: 40px;
+            background: #2a2a2a;
+            border-radius: 0.5px;
+        }
+
+        /* 设备刘海屏样式 - Dynamic Island */
+        .device-notch {
+            position: absolute;
+            width: 120px;
+            height: 35px;
+            background: #000;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 20px;
+            z-index: 2;
+        }
+
+        /* 设备屏幕容器 */
+        .device-screen {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #FF8C00 0%, #FFF5E9 100%);
+            border-radius: var(--screen-border-radius);
+            overflow: hidden;
+        }
+
+        .font-inter {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* 页面容器 */
+        .mobile-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 页面内容区域 */
+        .page-content {
+            height: calc(100% - 80px); /* 减去导航栏的高度 */
+            overflow-y: auto;
+            padding-bottom: 80px;
+            position: relative;
+        }
+
+        /* 顶部区域样式 */
+        .top-area {
+            padding-top: 45px;
+            padding-bottom: 12px;
+            padding-left: 32px;
+            padding-right: 24px;
+        }
+
+        /* 底部导航栏样式 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 360px;
+            background: linear-gradient(to right, #FF8C00, #FFA500);
+            border-radius: 50px;
+            padding: 12px 0;
+            box-shadow: 0 4px 10px rgba(255, 140, 0, 0.3);
+            z-index: 1000;
+        }
+
+        /* 添加选中状态的圆圈背景 */
+        .nav-item-active {
+            position: relative;
+        }
+
+        .nav-item-active::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        /* 预览容器样式 */
+        .preview-container {
+            width: 100%;
+            min-height: 100vh;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* 功能卡片样式 */
+        .feature-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            padding: 12px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feature-card svg {
+            margin-bottom: 4px;
+        }
+
+        /* 白色背景区域 */
+        .white-bg {
+            background: linear-gradient(to bottom, white, rgb(255, 243, 224));
+            border-top-left-radius: 32px;
+            border-top-right-radius: 32px;
+            margin-top: 0;
+            padding-bottom: 20px;
+            position: relative;
+        }
+
+        /* 功能列表项样式 */
+        .feature-item {
+            background: linear-gradient(to right, #fff5e9, #fff9f2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-left: 4px solid #FF8C00;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-1px);
+            transition: transform 0.2s ease;
+        }
+
+        /* 订单状态按钮组样式 */
+        .order-status-btn {
+            background: linear-gradient(to bottom right, #ff8c00, #ffa500);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .order-status-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom right, transparent, rgba(255, 255, 255, 0.1));
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="device-frame">
+            <!-- 设备按钮 -->
+            <div class="device-btns">
+                <div class="device-btn"></div>
+                <div class="device-btn"></div>
+                <div class="device-btn"></div>
+            </div>
+            <div class="device-power-btn"></div>
+            
+            <!-- 设备屏幕 -->
+            <div class="device-screen">
+                <!-- Dynamic Island -->
+                <div class="device-notch"></div>
+                
+                <!-- 页面内容 -->
+                <div class="mobile-container">
+                    <!-- 顶部区域 -->
+                    <div class="top-area">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col items-start">
+                                <h2 class="text-2xl font-semibold text-white">Hi, 用户昵称</h2>
+                                <p class="text-sm text-gray-600 mt-1">ID: 888888</p>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <!-- 设置图标 -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white mr-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                
+                                <!-- 头像 -->
+                                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                                     class="w-16 h-16 rounded-2xl object-cover"
+                                     alt="用户头像">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="page-content">
+                        <!-- 三个信息卡片 -->
+                        <div class="px-4 mb-4 mt-4">
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="feature-card">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                                    </svg>
+                                    <p class="text-xs font-medium text-white">我的拍卖</p>
+                                </div>
+                                <div class="feature-card">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                    <p class="text-xs font-medium text-white">我的足迹</p>
+                                </div>
+                                <div class="feature-card">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    <p class="text-xs font-medium text-white">我的信箱</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 分隔线和下半部分内容容器 -->
+                        <div class="mt-2">
+                            <!-- 分隔线 -->
+                            <div class="px-4 relative">
+                                <div class="flex items-center justify-between">
+                                    <div class="w-[45%] h-2 bg-white" style="border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 16px; border-bottom-left-radius: 0;"></div>
+                                    <div class="w-[45%] h-2 bg-white" style="border-top-left-radius: 16px; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0;"></div>
+                                </div>
+                            </div>
+
+                            <!-- 白色背景区域 -->
+                            <div class="white-bg">
+                                <!-- 功能列表 -->
+                                <div class="px-4 space-y-4 pt-6">
+                                    <!-- 我的钱包 -->
+                                    <div class="feature-item">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                            </div>
+                                            <div class="ml-4 flex-1">
+                                                <h3 class="text-base font-medium text-gray-900">我的钱包</h3>
+                                                <p class="text-xs text-gray-500 mt-0.5">查看余额和交易记录</p>
+                                            </div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <!-- 订单管理 -->
+                                    <div class="feature-item">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                </svg>
+                                            </div>
+                                            <div class="ml-4 flex-1">
+                                                <h3 class="text-base font-medium text-gray-900">订单管理</h3>
+                                                <p class="text-xs text-gray-500 mt-0.5">查看全部订单</p>
+                                            </div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                        <!-- 订单状态按钮组 -->
+                                        <div class="grid grid-cols-4 gap-4 mt-5">
+                                            <div class="flex flex-col items-center">
+                                                <div class="order-status-btn w-14 h-14 mb-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                                <span class="text-xs text-gray-600 font-medium">已竞得</span>
+                                            </div>
+                                            <div class="flex flex-col items-center">
+                                                <div class="order-status-btn w-14 h-14 mb-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                                    </svg>
+                                                </div>
+                                                <span class="text-xs text-gray-600 font-medium">待收货</span>
+                                            </div>
+                                            <div class="flex flex-col items-center">
+                                                <div class="order-status-btn w-14 h-14 mb-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                </div>
+                                                <span class="text-xs text-gray-600 font-medium">售后</span>
+                                            </div>
+                                            <div class="flex flex-col items-center">
+                                                <div class="order-status-btn w-14 h-14 mb-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                                                    </svg>
+                                                </div>
+                                                <span class="text-xs text-gray-600 font-medium">全部</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 服务中心 -->
+                                    <div class="feature-item">
+                                        <div class="flex items-center">
+                                            <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                                                </svg>
+                                            </div>
+                                            <div class="ml-4 flex-1">
+                                                <h3 class="text-base font-medium text-gray-900">服务中心</h3>
+                                                <p class="text-xs text-gray-500 mt-0.5">帮助与客服支持</p>
+                                            </div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 底部导航栏移到这里 -->
+    <nav class="bottom-nav">
+        <div class="flex justify-around items-center">
+            <a href="#" class="flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+            </a>
+            <a href="#" class="flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-white" viewBox="0 0 24 24" fill="none">
+                    <path d="M5.25 8.625L9 4.875L16.125 12L12.375 15.75L5.25 8.625Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M9 4.875L11.25 2.625L18.375 9.75L16.125 12L9 4.875Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M5.25 8.625L3 10.875V14.25H6.375L8.625 12L5.25 8.625Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 21.375H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+            <a href="#" class="flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+            </a>
+            <a href="#" class="flex flex-col items-center nav-item-active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </a>
+        </div>
+    </nav>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html> 

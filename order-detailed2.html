@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单详情</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF8C00, #FFA500);
+            --device-width: 375px;
+            --device-height: 812px;
+            --device-frame-width: 410px;
+            --device-frame-height: 847px;
+            --device-border-radius: 55px;
+            --screen-border-radius: 47px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 24px;
+        }
+
+        /* 设备外框和基础样式保持与订单管理页面一致 */
+        .device-frame {
+            width: var(--device-frame-width);
+            height: var(--device-frame-height);
+            background: #1a1a1a;
+            border-radius: var(--device-border-radius);
+            padding: 10px;
+            position: relative;
+            box-shadow: 
+                0 50px 100px -20px rgba(50, 50, 93, 0.15),
+                0 30px 60px -30px rgba(0, 0, 0, 0.2);
+            margin: 40px auto;
+            border: 0.5px solid #2a2a2a;
+        }
+
+        .device-screen {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #FF8C00 0%, #FFF5E9 100%);
+            border-radius: var(--screen-border-radius);
+            overflow: hidden;
+        }
+
+        .mobile-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部导航栏 */
+        .nav-header {
+            position: relative;
+            padding: 30px 20px 10px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            color: #fff;
+        }
+
+        .nav-header h1 {
+            color: #fff;
+            margin-left: 4px;
+            font-size: 18px;
+            display: none;  /* 隐藏标题 */
+        }
+
+        /* 状态栏样式优化 */
+        .status-bar {
+            margin: 12px 16px;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-content {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .status-text {
+            color: #FFFFFF;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        /* 更新按钮样式 */
+        .contact-btn {
+            background: linear-gradient(135deg, #FF8C00, #FFA500);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 2px solid rgba(255, 215, 0, 0.8);
+            white-space: nowrap;
+            margin-left: 16px;
+            flex-shrink: 0;
+            box-shadow: 
+                0 4px 12px rgba(255, 140, 0, 0.3),
+                0 2px 6px rgba(255, 140, 0, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .contact-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 16px rgba(255, 140, 0, 0.4),
+                0 3px 8px rgba(255, 140, 0, 0.3);
+        }
+
+        .contact-btn:active {
+            transform: translateY(1px);
+            box-shadow: 
+                0 2px 8px rgba(255, 140, 0, 0.3),
+                0 1px 4px rgba(255, 140, 0, 0.2);
+        }
+
+        /* 内容卡片通用样式 */
+        .detail-card {
+            background: rgba(255, 255, 255, 0.85);  /* 增加透明度 */
+            backdrop-filter: blur(10px);  /* 磨砂玻璃效果 */
+            margin: 0 16px 16px;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 2px 4px -1px rgba(0, 0, 0, 0.03),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.15);  /* 内部微光效果 */
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        /* 拍卖信息样式更新 */
+        .auction-info {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;  /* 减小行距 */
+            font-size: 14px;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;  /* 最后一行不需要底部间距 */
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* 拍品信息样式更新 */
+        .product-card {
+            display: flex;
+            gap: 12px;  /* 减小图片和内容之间的间距 */
+            margin-bottom: 12px;  /* 减小卡片之间的间距 */
+            padding-bottom: 12px;  /* 减小底部内边距 */
+            border-bottom: none;
+        }
+
+        .product-card:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .product-image {
+            width: 100px;  /* 减小图片尺寸 */
+            height: 100px;  /* 减小图片尺寸 */
+            border-radius: 8px;
+            object-fit: cover;
+            margin-bottom: 0;
+            flex-shrink: 0;
+        }
+
+        .product-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;  /* 优化垂直空间分布 */
+        }
+
+        .lot-number {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 2px;  /* 减小间距 */
+        }
+
+        .product-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;  /* 减小间距 */
+            line-height: 1.3;  /* 减小行高 */
+        }
+
+        .price-info {
+            background: rgba(255, 140, 0, 0.1);
+            border-radius: 8px;
+            padding: 6px 12px;  /* 减小内边距 */
+            margin-top: auto;
+        }
+
+        .price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .price-label {
+            color: #666;
+        }
+
+        .price-value {
+            color: #FF8C00;
+            font-weight: 500;
+        }
+
+        /* 支付信息 */
+        .payment-info .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 物流信息 */
+        .logistics-info {
+            margin-bottom: 0;
+        }
+
+        .tracking-number {
+            background: #f5f5f5;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+            color: #333;
+        }
+
+        /* 总价信息样式更新 */
+        .total-info {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        /* 合并后的卡片样式 */
+        .auction-products-card {
+            background: rgba(255, 255, 255, 0.85);  /* 增加透明度 */
+            backdrop-filter: blur(10px);  /* 磨砂玻璃效果 */
+            margin: 0 16px 16px;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 2px 4px -1px rgba(0, 0, 0, 0.03),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.15);  /* 内部微光效果 */
+        }
+    </style>
+</head>
+<body>
+    <div class="device-frame">
+        <div class="device-screen">
+            <div class="mobile-container">
+                <!-- 顶部导航栏 -->
+                <div class="nav-header">
+                    <div class="nav-left">
+                        <a href="#" class="back-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 状态栏样式优化 -->
+                <div class="status-bar">
+                    <div class="status-content">
+                        <div class="status-text">待发货</div>
+                    </div>
+                    <button class="contact-btn">联系客服</button>
+                </div>
+
+                <!-- 合并拍卖信息、拍品信息和总价信息 -->
+                <div class="auction-products-card">
+                    <div class="auction-info">
+                        <div class="info-row">
+                            <span class="info-label">拍卖会名称</span>
+                            <span class="info-value">2025新年迎春拍卖会</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">拍卖场次</span>
+                            <span class="info-value">紫砂大师专场</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">拍卖日期</span>
+                            <span class="info-value">2025年1月15日</span>
+                        </div>
+                    </div>
+
+                    <div class="product-card">
+                        <img src="https://i.postimg.cc/7ZHVtXVS/lotus.jpg" alt="张大千泼彩荷花" class="product-image">
+                        <div class="product-info">
+                            <div class="lot-number">LOT 002</div>
+                            <div class="product-title">张大千泼彩荷花</div>
+                            <div class="price-info">
+                                <div class="price-row">
+                                    <span class="price-label">落槌价</span>
+                                    <span class="price-value">¥10,000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="product-card">
+                        <img src="https://i.postimg.cc/QCyJnCxy/shrimp.jpg" alt="齐白石虾趣图" class="product-image">
+                        <div class="product-info">
+                            <div class="lot-number">LOT 005</div>
+                            <div class="product-title">齐白石虾趣图</div>
+                            <div class="price-info">
+                                <div class="price-row">
+                                    <span class="price-label">落槌价</span>
+                                    <span class="price-value">¥15,000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="product-card">
+                        <img src="https://i.postimg.cc/L8Xyp8Bs/horse.jpg" alt="徐悲鸿奔马图" class="product-image">
+                        <div class="product-info">
+                            <div class="lot-number">LOT 008</div>
+                            <div class="product-title">徐悲鸿奔马图</div>
+                            <div class="price-info">
+                                <div class="price-row">
+                                    <span class="price-label">落槌价</span>
+                                    <span class="price-value">¥20,000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="total-info">
+                        <div class="info-row">
+                            <span class="info-label">总件数</span>
+                            <span class="info-value">3件</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">总落槌价</span>
+                            <span class="info-value">¥45,000</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">总佣金 (15%)</span>
+                            <span class="info-value">¥6,750</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">成交总额</span>
+                            <span class="info-value" style="color: #FF8C00;">¥51,750</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 订单信息 -->
+                <div class="detail-card">
+                    <div class="card-title">订单信息</div>
+                    <div class="info-row">
+                        <span class="info-label">订单编号</span>
+                        <span class="info-value">202501150002</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">竞得时间</span>
+                        <span class="info-value">2025-01-15 14:30:25</span>
+                    </div>
+                    <div class="info-row" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0, 0, 0, 0.05);">
+                        <span class="info-label">付款时间</span>
+                        <span class="info-value">2025-01-15 15:30:25</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">付款方式</span>
+                        <span class="info-value">微信支付</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">保证金抵扣</span>
+                        <span class="info-value">-¥5,000</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">实付金额</span>
+                        <span class="info-value" style="color: #FF8C00;">¥46,750</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

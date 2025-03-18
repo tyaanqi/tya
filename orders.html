@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF8C00, #FFA500);
+            --device-width: 375px;
+            --device-height: 812px;
+            --device-frame-width: 410px;
+            --device-frame-height: 847px;
+            --device-border-radius: 55px;
+            --screen-border-radius: 47px;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 设备外框样式 */
+        .device-frame {
+            width: var(--device-frame-width);
+            height: var(--device-frame-height);
+            background: #1a1a1a;
+            border-radius: var(--device-border-radius);
+            padding: 10px;
+            position: relative;
+            box-shadow: 
+                0 50px 100px -20px rgba(50, 50, 93, 0.15),
+                0 30px 60px -30px rgba(0, 0, 0, 0.2);
+            margin: 40px auto;
+            border: 0.5px solid #2a2a2a;
+        }
+
+        /* 设备按钮样式 */
+        .device-btns {
+            position: absolute;
+            right: -0.5px;
+            top: 110px;
+            width: 1px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .device-btn {
+            width: 1px;
+            height: 25px;
+            background: #2a2a2a;
+            border-radius: 0.5px;
+        }
+
+        .device-power-btn {
+            position: absolute;
+            left: -0.5px;
+            top: 110px;
+            width: 1px;
+            height: 40px;
+            background: #2a2a2a;
+            border-radius: 0.5px;
+        }
+
+        /* 设备刘海屏样式 - Dynamic Island */
+        .device-notch {
+            position: absolute;
+            width: 120px;
+            height: 35px;
+            background: #000;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 20px;
+            z-index: 2;
+        }
+
+        /* 设备屏幕容器 */
+        .device-screen {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #FF8C00 0%, #FFF5E9 100%);
+            border-radius: var(--screen-border-radius);
+            overflow: hidden;
+        }
+
+        /* 页面容器 */
+        .mobile-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部导航栏 */
+        .nav-header {
+            position: relative;
+            padding: 30px 20px 10px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+        }
+
+        /* 返回按钮 */
+        .back-btn {
+            display: flex;
+            align-items: center;
+            color: #fff;
+        }
+
+        /* 标题样式调整 */
+        .nav-header h1 {
+            color: #fff;
+            margin-left: 4px;
+            font-size: 18px;
+        }
+
+        /* 搜索按钮 */
+        .search-btn {
+            color: #fff;
+            padding: 8px;
+        }
+
+        /* 订单状态导航 */
+        .order-nav {
+            display: flex;
+            padding: 5px 16px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            margin-bottom: 8px;
+        }
+
+        .order-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-item {
+            flex: 1;
+            min-width: fit-content;
+            padding: 6px 16px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            font-size: 14px;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .nav-item.active {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: #fff;
+            border-radius: 2px;
+        }
+
+        /* 订单列表区域 */
+        .order-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px;
+        }
+
+        /* 订单卡片样式更新 */
+        .order-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 2px 4px -1px rgba(0, 0, 0, 0.03),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .order-header {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: none;  /* 移除边框 */
+        }
+
+        .shop-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .shop-name {
+            color: #333;
+            font-size: 15px;
+            margin-bottom: 2px;
+        }
+
+        .shop-category {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .order-status {
+            color: #FF8C00;
+            font-size: 14px;
+        }
+
+        /* 多拍品订单样式更新 */
+        .order-content {
+            padding: 16px;
+        }
+
+        .products-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .product-item {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: none;  /* 移除分隔线 */
+        }
+
+        .product-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .product-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .product-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .lot-number {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .product-title {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .price {
+            color: #FF8C00;
+            font-weight: 500;
+            font-size: 16px;
+            text-align: right;
+        }
+
+        .order-footer {
+            padding: 16px;
+            border-top: none;  /* 移除边框 */
+            background: rgba(255, 255, 255, 0.3);  /* 轻微的背景色区分 */
+        }
+
+        .footer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .more-options {
+            color: #FF8C00;
+            font-size: 14px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 8px 0;
+            min-width: 120px;
+            z-index: 10;
+        }
+
+        .more-options:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 8px 16px;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 140, 0, 0.1);
+        }
+
+        .total-amount {
+            font-size: 15px;
+            color: #333;
+            text-align: right;
+        }
+
+        .total-amount span {
+            color: #FF8C00;
+            font-weight: 500;
+            margin-left: 4px;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: none;
+        }
+
+        /* 更新按钮样式以配合磨砂效果 */
+        .btn-primary {
+            background: linear-gradient(135deg, #FF8C00, #FFA500);
+            color: #fff;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(255, 140, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(255, 140, 0, 0.3);
+        }
+
+        .btn-outline {
+            background: linear-gradient(135deg, #FF8C00, #FFA500);
+            color: #fff;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(255, 140, 0, 0.2);
+        }
+
+        .btn-outline:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(255, 140, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="device-frame">
+            <!-- 设备按钮 -->
+            <div class="device-btns">
+                <div class="device-btn"></div>
+                <div class="device-btn"></div>
+                <div class="device-btn"></div>
+            </div>
+            <div class="device-power-btn"></div>
+            
+            <!-- 设备屏幕 -->
+            <div class="device-screen">
+                <!-- Dynamic Island -->
+                <div class="device-notch"></div>
+                
+                <!-- 页面内容 -->
+                <div class="mobile-container">
+                    <!-- 顶部导航栏 -->
+                    <div class="nav-header">
+                        <div class="nav-left">
+                            <a href="#" class="back-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </a>
+                            <h1>订单管理</h1>
+                        </div>
+                        <a href="#" class="search-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </a>
+                    </div>
+
+                    <!-- 订单状态导航 -->
+                    <div class="order-nav">
+                        <div class="nav-item active">全部</div>
+                        <div class="nav-item">已竞得</div>
+                        <div class="nav-item">待发货</div>
+                        <div class="nav-item">待收货</div>
+                        <div class="nav-item">售后</div>
+                    </div>
+
+                    <!-- 订单列表 -->
+                    <div class="order-list">
+                        <!-- 订单卡片示例 -->
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="shop-info">
+                                    <div class="shop-name">2025新年迎春拍卖会</div>
+                                    <div class="shop-category">紫砂大师专场</div>
+                                </div>
+                                <div class="order-status">已竞得</div>
+                            </div>
+                            <div class="order-content">
+                                <div class="products-list">
+                                    <div class="product-item">
+                                        <img src="https://i.postimg.cc/7ZHVtXVS/lotus.jpg" alt="张大千泼彩荷花" class="product-image">
+                                        <div class="product-info">
+                                            <div class="lot-number">LOT 002</div>
+                                            <div class="product-title">张大千泼彩荷花</div>
+                                            <div class="price">落槌价：¥10,000</div>
+                                        </div>
+                                    </div>
+                                    <div class="product-item">
+                                        <img src="https://i.postimg.cc/QCyJnCxy/shrimp.jpg" alt="齐白石虾趣图" class="product-image">
+                                        <div class="product-info">
+                                            <div class="lot-number">LOT 005</div>
+                                            <div class="product-title">齐白石虾趣图</div>
+                                            <div class="price">落槌价：¥15,000</div>
+                                        </div>
+                                    </div>
+                                    <div class="product-item">
+                                        <img src="https://i.postimg.cc/L8Xyp8Bs/horse.jpg" alt="徐悲鸿奔马图" class="product-image">
+                                        <div class="product-info">
+                                            <div class="lot-number">LOT 008</div>
+                                            <div class="product-title">徐悲鸿奔马图</div>
+                                            <div class="price">落槌价：¥20,000</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="order-footer">
+                                <div class="footer-top">
+                                    <div class="more-options">
+                                        更多
+                                        <div class="dropdown-menu">
+                                            <div class="dropdown-item">分享</div>
+                                            <div class="dropdown-item">删除订单</div>
+                                            <div class="dropdown-item">申请开票</div>
+                                        </div>
+                                    </div>
+                                    <div class="total-amount">
+                                        共三件拍品 成交合计<span>¥45,000</span>
+                                    </div>
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary">立即付款</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第二个订单卡片 -->
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="shop-info">
+                                    <div class="shop-name">2025新年迎春拍卖会</div>
+                                    <div class="shop-category">当代艺术专场</div>
+                                </div>
+                                <div class="order-status">待收货</div>
+                            </div>
+                            <div class="order-content">
+                                <div class="products-list">
+                                    <div class="product-item">
+                                        <img src="https://i.postimg.cc/L8Xyp8Bs/horse.jpg" alt="吴冠中《江南春晓》" class="product-image">
+                                        <div class="product-info">
+                                            <div class="lot-number">LOT 015</div>
+                                            <div class="product-title">吴冠中《江南春晓》</div>
+                                            <div class="price">落槌价：¥185,000</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="order-footer">
+                                <div class="footer-top">
+                                    <div class="more-options">
+                                        更多
+                                        <div class="dropdown-menu">
+                                            <div class="dropdown-item">分享</div>
+                                            <div class="dropdown-item">删除订单</div>
+                                            <div class="dropdown-item">申请开票</div>
+                                        </div>
+                                    </div>
+                                    <div class="total-amount">
+                                        共一件拍品 成交合计<span>¥213,000</span>
+                                    </div>
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="btn btn-primary">确认收货</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 第三个订单卡片 -->
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div class="shop-info">
+                                    <div class="shop-name">2025新年迎春拍卖会</div>
+                                    <div class="shop-category">古代书画专场</div>
+                                </div>
+                                <div class="order-status">待发货</div>
+                            </div>
+                            <div class="order-content">
+                                <div class="products-list">
+                                    <div class="product-item">
+                                        <img src="https://i.postimg.cc/QCyJnCxy/shrimp.jpg" alt="齐白石《虾趣图》" class="product-image">
+                                        <div class="product-info">
+                                            <div class="lot-number">LOT 108</div>
+                                            <div class="product-title">齐白石《虾趣图》</div>
+                                            <div class="price">落槌价：¥280,000</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="order-footer">
+                                <div class="footer-top">
+                                    <div class="more-options">
+                                        更多
+                                        <div class="dropdown-menu">
+                                            <div class="dropdown-item">分享</div>
+                                            <div class="dropdown-item">删除订单</div>
+                                            <div class="dropdown-item">申请开票</div>
+                                        </div>
+                                    </div>
+                                    <div class="total-amount">
+                                        共一件拍品 成交合计<span>¥322,000</span>
+                                    </div>
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="btn btn-outline">提醒发货</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

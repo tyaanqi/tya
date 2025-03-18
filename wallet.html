@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的钱包</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF8C00, #FFA500);
+            --device-width: 375px;
+            --device-height: 812px;
+            --device-frame-width: 410px;
+            --device-frame-height: 847px;
+            --device-border-radius: 55px;
+            --screen-border-radius: 47px;
+            --ios-background: #F2F2F7;
+            --ios-card-background: #FFFFFF;
+            --ios-primary: #FF9500;
+            --ios-secondary: #5856D6;
+            --ios-text-primary: #000000;
+            --ios-text-secondary: #6C6C70;
+            --ios-border: rgba(60, 60, 67, 0.1);
+            --bg-gradient: linear-gradient(to bottom, rgba(255, 153, 85, 0.95), rgba(255, 224, 178, 0.95));
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 设备外框样式 */
+        .device-frame {
+            position: relative;
+            width: var(--device-frame-width);
+            height: var(--device-frame-height);
+            background: #1a1a1a;
+            border-radius: var(--device-border-radius);
+            padding: 10px;
+            box-shadow: 
+                0 50px 100px -20px rgba(50, 50, 93, 0.15),
+                0 30px 60px -30px rgba(0, 0, 0, 0.2);
+            margin: 40px auto;
+            border: 0.5px solid #2a2a2a;
+            overflow: hidden;
+        }
+
+        /* 设备按钮样式 */
+        .device-btns {
+            position: absolute;
+            right: -0.5px;
+            top: 110px;
+            width: 1px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .device-btn {
+            width: 1px;
+            height: 25px;
+            background: #2a2a2a;
+            border-radius: 0.5px;
+        }
+
+        .device-power-btn {
+            position: absolute;
+            left: -0.5px;
+            top: 110px;
+            width: 1px;
+            height: 40px;
+            background: #2a2a2a;
+            border-radius: 0.5px;
+        }
+
+        /* 设备刘海屏样式 - Dynamic Island */
+        .device-notch {
+            position: absolute;
+            width: 120px;
+            height: 35px;
+            background: #000;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 20px;
+            z-index: 2;
+        }
+
+        /* 设备屏幕容器 */
+        .device-screen {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #FF8C00 0%, #FFF5E9 100%);
+            border-radius: var(--screen-border-radius);
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .font-inter {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* 页面容器 */
+        .mobile-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        /* 页面内容区域 */
+        .page-content {
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 32px;
+            position: relative;
+        }
+
+        /* 顶部区域样式 */
+        .top-area {
+            padding-top: 45px;
+            padding-bottom: 12px;
+            padding-left: 32px;
+            padding-right: 24px;
+        }
+
+        /* 钱包余额卡片样式 */
+        .wallet-balance-card {
+            background-color: #FF8C00;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 12px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 钱包装饰图标 */
+        .wallet-icon-bg {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 120px;
+            height: 120px;
+            opacity: 0.1;
+            background: white;
+            border-radius: 60px;
+        }
+
+        .wallet-icon-bg::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 45px;
+            background: #FF8C00;
+            transform: translate(-50%, -50%);
+            border-radius: 8px;
+            box-shadow: 0 -5px 0 rgba(255,255,255,0.2);
+        }
+
+        .wallet-icon-bg::after {
+            content: '';
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            width: 50px;
+            height: 10px;
+            background: #FF8C00;
+            transform: translate(-50%, -50%);
+            border-radius: 5px;
+            box-shadow: 0 -2px 0 rgba(255,255,255,0.2);
+        }
+
+        /* 余额显示区域样式 */
+        .balance-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 12px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .wallet-balance-amount {
+            font-size: 32px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .wallet-balance-amount.hidden {
+            color: transparent;
+            text-shadow: 0 0 8px rgba(255,255,255,0.8);
+        }
+
+        .toggle-visibility {
+            background: none;
+            border: none;
+            padding: 8px;
+            cursor: pointer;
+            color: white;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .toggle-visibility:hover {
+            opacity: 1;
+        }
+
+        .toggle-visibility svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .wallet-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .wallet-action-button {
+            background: linear-gradient(135deg, #FF8C00, #FF4D4D);
+            padding: 10px 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(255, 77, 77, 0.2);
+        }
+
+        .wallet-action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 77, 77, 0.3);
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+
+        .wallet-action-button:active {
+            transform: translateY(0);
+        }
+
+        .wallet-action-button.withdraw {
+            background: linear-gradient(135deg, #FF8C00, #8B5CF6);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .wallet-action-button.withdraw:hover {
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+
+        .wallet-action-button span {
+            font-size: 18px;
+            margin-right: 4px;
+            font-weight: 600;
+        }
+
+        .wallet-title {
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .wallet-title-text {
+            font-size: 16px;
+            font-weight: 500;
+            margin-left: 8px;
+            opacity: 0.9;
+        }
+
+        .transaction-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+            margin: 24px 16px 16px;
+        }
+
+        /* 交易记录样式更新 */
+        .transaction-list {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin: 0 16px 16px;
+            padding: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .transaction-item {
+            padding: 12px 16px;
+            background: transparent;
+            margin-bottom: 0;
+            position: relative;
+        }
+
+        .transaction-item::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .transaction-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            width: calc(100% + 16px);
+            height: 16px;
+            bottom: -8px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03);
+            pointer-events: none;
+        }
+
+        .transaction-item:last-child::after,
+        .transaction-item:last-child::before {
+            display: none;
+        }
+
+        .transaction-text {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .transaction-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+        }
+
+        .transaction-amount {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .amount-positive {
+            color: #22C55E;
+        }
+
+        .amount-negative {
+            color: #EF4444;
+        }
+
+        /* 预览容器样式 */
+        .preview-container {
+            width: 100%;
+            min-height: 100vh;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* 导航容器和标题样式 */
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 24px 16px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 4px;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 0;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .nav-tab {
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            padding: 8px 24px;
+            flex: 1;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .nav-tab.active {
+            color: #FF8C00;
+            font-weight: 600;
+        }
+
+        /* 添加滑块效果 */
+        .nav-container::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: calc(100% - 8px);
+            background: white;
+            border-radius: 12px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-container[data-active="1"]::before {
+            transform: translateX(calc(100% + 4px));
+        }
+
+        .nav-tab:hover:not(.active) {
+            color: #FF8C00;
+            opacity: 0.8;
+        }
+
+        /* 导航容器和交易列表连接样式 */
+        .transaction-list {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+            margin-top: 0;
+        }
+
+        /* 银行卡管理样式 */
+        .bank-cards-container {
+            display: none;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            margin: 0 16px;
+            padding: 16px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+        .bank-cards-stack {
+            position: relative;
+            padding: 8px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bank-card {
+            position: relative;
+            padding: 16px 20px;
+            border-radius: 16px;
+            color: white;
+            background: linear-gradient(120deg, #4F46E5, #7C3AED);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            height: 80px;
+            width: 100%;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .bank-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .bank-card.credit {
+            background: linear-gradient(120deg, #FF8036, #FD4D40);
+        }
+
+        .bank-card.debit-ccb {
+            background: linear-gradient(120deg, #4F46E5, #7C3AED);
+        }
+
+        .bank-card.debit-abc {
+            background: linear-gradient(120deg, #10B981, #059669);
+        }
+
+        .card-content {
+            margin: 0;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bank-card-type {
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .bank-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .card-number {
+            font-size: 13px;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        .card-logo {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-logo svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+        }
+
+        .add-card-btn {
+            background: rgba(255, 140, 0, 0.05);
+            border: 2px dashed rgba(255, 140, 0, 0.2);
+            border-radius: 16px;
+            height: 80px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FF8C00;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+            padding: 0;
+        }
+
+        .add-card-btn:hover {
+            background: rgba(255, 140, 0, 0.08);
+            border-color: rgba(255, 140, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .add-card-btn svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+
+        .nav-container[data-active="1"] ~ .transaction-list {
+            display: none !important;
+        }
+
+        .nav-container[data-active="1"] ~ .bank-cards-container {
+            display: block !important;
+        }
+
+        /* 在 style 标签内添加新的样式 */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            animation: fadeIn 0.3s ease;
+            border-radius: var(--screen-border-radius);
+        }
+
+        .modal-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-height: 80%;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 16px;
+            border: none;
+            background: rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .amount-input-container {
+            margin: 24px 0;
+        }
+
+        .amount-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .amount-input-group {
+            display: flex;
+            align-items: center;
+            background: #f5f5f5;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-top: 8px;
+        }
+
+        .currency-symbol {
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            margin-right: 8px;
+        }
+
+        .amount-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 24px;
+            font-weight: 500;
+            color: #333;
+            outline: none;
+            padding: 0;
+            -moz-appearance: textfield;
+        }
+
+        .amount-input::-webkit-outer-spin-button,
+        .amount-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .quick-amounts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .quick-amount-btn {
+            background: #f5f5f5;
+            border: none;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 15px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-amount-btn:hover {
+            background: #ebebeb;
+        }
+
+        .payment-methods {
+            margin: 24px 0;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-radius: 12px;
+            background: #f5f5f5;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-method:hover {
+            background: #ebebeb;
+        }
+
+        .payment-method.selected {
+            background: rgba(255, 140, 0, 0.1);
+            border: 1px solid #FF8C00;
+        }
+
+        .payment-method-icon {
+            width: 32px;
+            height: 32px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .payment-method-info {
+            flex: 1;
+        }
+
+        .payment-method-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .payment-method-description {
+            font-size: 13px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .confirm-button {
+            background: linear-gradient(135deg, #FF8C00, #FF4D4D);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 16px;
+            width: 100%;
+            margin-top: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 77, 77, 0.2);
+        }
+
+        .confirm-button:active {
+            transform: translateY(0);
+        }
+
+        .confirm-button.withdraw {
+            background: linear-gradient(135deg, #FF8C00, #8B5CF6);
+        }
+
+        .confirm-button.withdraw:hover {
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+        }
+
+        /* 添加微信支付图标样式 */
+        .payment-method-icon.wechat {
+            background: #07C160;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 添加银行卡表单样式 */
+        .card-form {
+            padding: 16px 0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            font-size: 16px;
+            color: #333;
+            background: #f5f5f5;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FF8C00;
+            background: #fff;
+            box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.1);
+        }
+
+        .card-input-group {
+            position: relative;
+        }
+
+        .card-type-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            color: #999;
+        }
+
+        .bank-selector {
+            position: relative;
+        }
+
+        .selected-bank {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f5f5f5;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .selected-bank:hover {
+            background: #f0f0f0;
+        }
+
+        .bank-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            color: #999;
+        }
+
+        .bank-name {
+            flex: 1;
+            font-size: 16px;
+            color: #999;
+        }
+
+        .selector-arrow {
+            width: 20px;
+            height: 20px;
+            color: #999;
+        }
+
+        .agreement-section {
+            margin: 24px 0;
+        }
+
+        .agreement-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .checkbox-input {
+            display: none;
+        }
+
+        .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e5e5;
+            border-radius: 6px;
+            margin-right: 8px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-input:checked + .checkbox-custom {
+            background: #FF8C00;
+            border-color: #FF8C00;
+        }
+
+        .checkbox-input:checked + .checkbox-custom::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .agreement-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .link-text {
+            color: #FF8C00;
+            text-decoration: none;
+        }
+
+        .add-card-confirm {
+            background: #ccc;
+            pointer-events: none;
+        }
+
+        .add-card-confirm.active {
+            background: linear-gradient(135deg, #FF8C00, #FF4D4D);
+            pointer-events: auto;
+        }
+
+        /* 添加输入格式化和验证提示样式 */
+        .form-input.error {
+            border-color: #ff4d4d;
+            background: rgba(255, 77, 77, 0.05);
+        }
+
+        .error-message {
+            font-size: 12px;
+            color: #ff4d4d;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <div class="device-frame">
+            <!-- 设备按钮 -->
+            <div class="device-btns">
+                <div class="device-btn"></div>
+                <div class="device-btn"></div>
+                <div class="device-btn"></div>
+            </div>
+            <div class="device-power-btn"></div>
+            
+            <!-- 设备屏幕 -->
+            <div class="device-screen">
+                <!-- Dynamic Island -->
+                <div class="device-notch"></div>
+                
+                <!-- 页面内容 -->
+                <div class="mobile-container">
+                    <div id="wallet-page" class="page-content">
+                        <div class="top-area flex items-center">
+                            <button class="mr-4" onclick="history.back()">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <h2 class="text-xl font-semibold text-white">我的钱包</h2>
+                        </div>
+
+                        <!-- 钱包余额卡片 -->
+                        <div class="wallet-balance-card">
+                            <div class="wallet-icon-bg"></div>
+                            <div class="wallet-title">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span class="wallet-title-text">我的余额</span>
+                            </div>
+                            <div class="balance-container">
+                                <div id="balanceAmount" class="wallet-balance-amount">¥1,234.56</div>
+                                <button class="toggle-visibility" onclick="toggleBalance()">
+                                    <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="wallet-actions">
+                                <button class="wallet-action-button">
+                                    <span>+</span>
+                                    充值
+                                </button>
+                                <button class="wallet-action-button withdraw">
+                                    <span>×</span>
+                                    提现
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 导航标题 -->
+                        <div class="nav-container" data-active="0">
+                            <div class="nav-tab active" onclick="switchTab(0)">交易记录</div>
+                            <div class="nav-tab" onclick="switchTab(1)">银行卡管理</div>
+                        </div>
+
+                        <!-- 交易记录列表 -->
+                        <div class="transaction-list">
+                            <div class="transaction-item">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="transaction-text">支付拍品款</p>
+                                        <p class="transaction-time">2024-01-20 14:30</p>
+                                    </div>
+                                    <p class="transaction-amount amount-negative">-￥10,000.00</p>
+                                </div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="transaction-text">钱包充值</p>
+                                        <p class="transaction-time">2024-01-19 10:15</p>
+                                    </div>
+                                    <p class="transaction-amount amount-positive">+￥15,000.00</p>
+                                </div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="transaction-text">保证金抵扣</p>
+                                        <p class="transaction-time">2024-01-18 16:45</p>
+                                    </div>
+                                    <p class="transaction-amount amount-negative">-￥3,000.00</p>
+                                </div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="transaction-text">违约金扣除</p>
+                                        <p class="transaction-time">2024-01-17 09:20</p>
+                                    </div>
+                                    <p class="transaction-amount amount-negative">-￥1,500.00</p>
+                                </div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="transaction-text">钱包提现</p>
+                                        <p class="transaction-time">2024-01-16 15:30</p>
+                                    </div>
+                                    <p class="transaction-amount amount-negative">-￥5,000.00</p>
+                                </div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="transaction-text">保证金退回</p>
+                                        <p class="transaction-time">2024-01-15 11:20</p>
+                                    </div>
+                                    <p class="transaction-amount amount-positive">+￥3,000.00</p>
+                                </div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="transaction-text">拍品款项退回</p>
+                                        <p class="transaction-time">2024-01-14 14:25</p>
+                                    </div>
+                                    <p class="transaction-amount amount-positive">+￥8,500.00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 银行卡管理界面 -->
+                        <div class="bank-cards-container">
+                            <div class="bank-cards-stack">
+                                <div class="bank-card credit">
+                                    <div class="card-content">
+                                        <div class="card-left">
+                                            <div class="bank-card-type">信用卡 | 招商银行</div>
+                                            <div class="card-number">**** 8888</div>
+                                        </div>
+                                        <div class="card-right">
+                                            <div class="card-logo">
+                                                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill="currentColor" d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z"/>
+                                                    <path fill="#ffffff" d="M786.2 648.6H237.8V375.4h548.4v273.2z m-510.9-37.5h473.3V412.9H275.3v198.2z m435.8-124c0 20.7-16.8 37.5-37.5 37.5s-37.5-16.8-37.5-37.5 16.8-37.5 37.5-37.5 37.5 16.8 37.5 37.5z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bank-card debit-ccb">
+                                    <div class="card-content">
+                                        <div class="card-left">
+                                            <div class="bank-card-type">储蓄卡 | 建设银行</div>
+                                            <div class="card-number">**** 6666</div>
+                                        </div>
+                                        <div class="card-right">
+                                            <div class="card-logo">
+                                                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill="currentColor" d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z"/>
+                                                    <path fill="#ffffff" d="M661.9 495.8L535.7 369.6c-13.1-13.1-34.4-13.1-47.5 0L362 495.8c-13.1 13.1-13.1 34.4 0 47.5l126.2 126.2c13.1 13.1 34.4 13.1 47.5 0l126.2-126.2c13.1-13.1 13.1-34.4 0-47.5z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bank-card debit-abc">
+                                    <div class="card-content">
+                                        <div class="card-left">
+                                            <div class="bank-card-type">储蓄卡 | 农业银行</div>
+                                            <div class="card-number">**** 3333</div>
+                                        </div>
+                                        <div class="card-right">
+                                            <div class="card-logo">
+                                                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill="currentColor" d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z"/>
+                                                    <path fill="#ffffff" d="M695.7 460.8L512 277.1 328.3 460.8v85.9L512 363.4l183.7 183.7v-86.3z m0 170.7L512 448 328.3 631.7v85.9L512 534.1l183.7 183.7v-86.3z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="add-card-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                添加银行卡
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 充值弹窗 -->
+    <div id="rechargeModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">充值金额</div>
+                <button class="modal-close" onclick="closeModal('rechargeModal')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="amount-input-container">
+                <div class="amount-label">请输入充值金额</div>
+                <div class="amount-input-group">
+                    <span class="currency-symbol">¥</span>
+                    <input type="number" class="amount-input" placeholder="0.00" />
+                </div>
+            </div>
+
+            <div class="quick-amounts">
+                <button class="quick-amount-btn">¥100</button>
+                <button class="quick-amount-btn">¥500</button>
+                <button class="quick-amount-btn">¥1000</button>
+                <button class="quick-amount-btn">¥2000</button>
+                <button class="quick-amount-btn">¥5000</button>
+                <button class="quick-amount-btn">¥10000</button>
+            </div>
+
+            <div class="payment-methods">
+                <div class="payment-method">
+                    <div class="payment-method-icon wechat">
+                        <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                            <path fill="#ffffff" d="M692.3 348.3c11.8 0 23.5 0.9 35.1 2.3-31.5-146.8-188.9-255.8-368.2-255.8-200.9 0-365.4 136.9-365.4 309.2 0 99.9 54.5 182 145.8 245.7l-36.4 109.4L225 704.2c45.6 9 82.1 18.2 127.6 18.2 11.4 0 22.7-0.6 34-1.5-7.1-24.3-11.2-49.8-11.2-76.2-0.1-158.9 136.5-296.4 316.9-296.4zM497.7 249.1c27.3 0 45.5 17.9 45.5 45.1 0 27-18.2 45.3-45.5 45.3-27.2 0-54.5-18.2-54.5-45.3 0-27.2 27.3-45.1 54.5-45.1zM244.6 339.4c-27.2 0-54.7-18.2-54.7-45.3 0-27.2 27.4-45.1 54.7-45.1 27.2 0 45.3 17.9 45.3 45.1 0 27-18.1 45.3-45.3 45.3z"/>
+                            <path fill="#ffffff" d="M1024.2 629.7c0-145.8-145.8-264.7-309.6-264.7-173.5 0-309.7 118.9-309.7 264.7 0 146 136.2 264.7 309.7 264.7 36.2 0 72.8-9.1 109.2-18.2l99.8 54.6-27.3-91.1c72.9-54.9 127.9-127.6 127.9-210zM616.3 584.4c-18.2 0-36.4-18.1-36.4-36.4 0-18.1 18.2-36.3 36.4-36.3 27.4 0 45.5 18.2 45.5 36.3 0 18.3-18.1 36.4-45.5 36.4z m190.8 0c-18 0-36.2-18.1-36.2-36.4 0-18.1 18.2-36.3 36.2-36.3 27.2 0 45.5 18.2 45.5 36.3 0.1 18.3-18.2 36.4-45.5 36.4z"/>
+                        </svg>
+                    </div>
+                    <div class="payment-method-info">
+                        <div class="payment-method-name">微信支付</div>
+                        <div class="payment-method-description">快捷支付</div>
+                    </div>
+                </div>
+                
+                <div class="payment-method selected">
+                    <div class="payment-method-icon">
+                        <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                            <path fill="#FF8C00" d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z"/>
+                            <path fill="#ffffff" d="M786.2 648.6H237.8V375.4h548.4v273.2z m-510.9-37.5h473.3V412.9H275.3v198.2z m435.8-124c0 20.7-16.8 37.5-37.5 37.5s-37.5-16.8-37.5-37.5 16.8-37.5 37.5-37.5 37.5 16.8 37.5 37.5z"/>
+                        </svg>
+                    </div>
+                    <div class="payment-method-info">
+                        <div class="payment-method-name">招商银行储蓄卡</div>
+                        <div class="payment-method-description">尾号8888</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="confirm-button">确认充值</button>
+        </div>
+    </div>
+
+    <!-- 提现弹窗 -->
+    <div id="withdrawModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">提现金额</div>
+                <button class="modal-close" onclick="closeModal('withdrawModal')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="amount-input-container">
+                <div class="amount-label">请输入提现金额</div>
+                <div class="amount-input-group">
+                    <span class="currency-symbol">¥</span>
+                    <input type="number" class="amount-input" placeholder="0.00" />
+                </div>
+            </div>
+
+            <div class="quick-amounts">
+                <button class="quick-amount-btn">¥100</button>
+                <button class="quick-amount-btn">¥500</button>
+                <button class="quick-amount-btn">¥1000</button>
+                <button class="quick-amount-btn">¥2000</button>
+                <button class="quick-amount-btn">¥5000</button>
+                <button class="quick-amount-btn">全部提现</button>
+            </div>
+
+            <div class="payment-methods">
+                <div class="payment-method">
+                    <div class="payment-method-icon wechat">
+                        <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                            <path fill="#ffffff" d="M692.3 348.3c11.8 0 23.5 0.9 35.1 2.3-31.5-146.8-188.9-255.8-368.2-255.8-200.9 0-365.4 136.9-365.4 309.2 0 99.9 54.5 182 145.8 245.7l-36.4 109.4L225 704.2c45.6 9 82.1 18.2 127.6 18.2 11.4 0 22.7-0.6 34-1.5-7.1-24.3-11.2-49.8-11.2-76.2-0.1-158.9 136.5-296.4 316.9-296.4zM497.7 249.1c27.3 0 45.5 17.9 45.5 45.1 0 27-18.2 45.3-45.5 45.3-27.2 0-54.5-18.2-54.5-45.3 0-27.2 27.3-45.1 54.5-45.1zM244.6 339.4c-27.2 0-54.7-18.2-54.7-45.3 0-27.2 27.4-45.1 54.7-45.1 27.2 0 45.3 17.9 45.3 45.1 0 27-18.1 45.3-45.3 45.3z"/>
+                            <path fill="#ffffff" d="M1024.2 629.7c0-145.8-145.8-264.7-309.6-264.7-173.5 0-309.7 118.9-309.7 264.7 0 146 136.2 264.7 309.7 264.7 36.2 0 72.8-9.1 109.2-18.2l99.8 54.6-27.3-91.1c72.9-54.9 127.9-127.6 127.9-210zM616.3 584.4c-18.2 0-36.4-18.1-36.4-36.4 0-18.1 18.2-36.3 36.4-36.3 27.4 0 45.5 18.2 45.5 36.3 0 18.3-18.1 36.4-45.5 36.4z m190.8 0c-18 0-36.2-18.1-36.2-36.4 0-18.1 18.2-36.3 36.2-36.3 27.2 0 45.5 18.2 45.5 36.3 0.1 18.3-18.2 36.4-45.5 36.4z"/>
+                        </svg>
+                    </div>
+                    <div class="payment-method-info">
+                        <div class="payment-method-name">微信支付</div>
+                        <div class="payment-method-description">快捷支付</div>
+                    </div>
+                </div>
+                
+                <div class="payment-method selected">
+                    <div class="payment-method-icon">
+                        <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                            <path fill="#FF8C00" d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z"/>
+                            <path fill="#ffffff" d="M786.2 648.6H237.8V375.4h548.4v273.2z m-510.9-37.5h473.3V412.9H275.3v198.2z m435.8-124c0 20.7-16.8 37.5-37.5 37.5s-37.5-16.8-37.5-37.5 16.8-37.5 37.5-37.5 37.5 16.8 37.5 37.5z"/>
+                        </svg>
+                    </div>
+                    <div class="payment-method-info">
+                        <div class="payment-method-name">招商银行储蓄卡</div>
+                        <div class="payment-method-description">尾号8888</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="confirm-button withdraw">确认提现</button>
+        </div>
+    </div>
+
+    <!-- 添加银行卡弹窗 -->
+    <div id="addCardModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title">添加银行卡</div>
+                <button class="modal-close" onclick="closeModal('addCardModal')">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="card-form">
+                <div class="form-group">
+                    <label class="form-label">持卡人姓名</label>
+                    <input type="text" class="form-input" placeholder="请输入持卡人姓名" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">银行卡号</label>
+                    <div class="card-input-group">
+                        <input type="tel" 
+                               class="form-input card-number-input" 
+                               placeholder="请输入银行卡号"
+                               maxlength="19"
+                               pattern="[0-9]*"
+                               inputmode="numeric" />
+                        <div class="card-type-icon">
+                            <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="currentColor" d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z"/>
+                                <path fill="#ffffff" d="M786.2 648.6H237.8V375.4h548.4v273.2z m-510.9-37.5h473.3V412.9H275.3v198.2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">选择银行</label>
+                    <div class="bank-selector">
+                        <div class="selected-bank">
+                            <span class="bank-icon">
+                                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill="currentColor" d="M512 512m-512 0a512 512 0 1 0 1024 0 512 512 0 1 0-1024 0Z"/>
+                                </svg>
+                            </span>
+                            <span class="bank-name">请选择开户银行</span>
+                            <span class="selector-arrow">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">预留手机号</label>
+                    <div class="phone-input-group">
+                        <input type="tel" 
+                               class="form-input" 
+                               placeholder="请输入银行预留手机号"
+                               maxlength="11"
+                               pattern="[0-9]*"
+                               inputmode="numeric" />
+                    </div>
+                </div>
+
+                <div class="agreement-section">
+                    <label class="agreement-checkbox">
+                        <input type="checkbox" class="checkbox-input" />
+                        <span class="checkbox-custom"></span>
+                        <span class="agreement-text">我已阅读并同意<a href="#" class="link-text">《用户协议》</a>和<a href="#" class="link-text">《隐私政策》</a></span>
+                    </label>
+                </div>
+
+                <button class="confirm-button add-card-confirm">确认添加</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleBalance() {
+            const balanceAmount = document.getElementById('balanceAmount');
+            balanceAmount.classList.toggle('hidden');
+            
+            const eyeIcon = document.getElementById('eyeIcon');
+            if (balanceAmount.classList.contains('hidden')) {
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                `;
+            } else {
+                eyeIcon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                `;
+            }
+        }
+
+        function switchTab(index) {
+            const container = document.querySelector('.nav-container');
+            const tabs = container.querySelectorAll('.nav-tab');
+            
+            // 更新 data-active 属性
+            container.setAttribute('data-active', index);
+            
+            // 更新激活状态
+            tabs.forEach((tab, i) => {
+                if (i === index) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+        }
+
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const deviceScreen = document.querySelector('.device-screen');
+            
+            // 将弹窗移动到设备屏幕容器内
+            deviceScreen.appendChild(modal);
+            
+            modal.style.display = 'block';
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 10);
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+
+        // 更新充值和提现按钮的点击事件
+        document.querySelector('.wallet-action-button').onclick = () => showModal('rechargeModal');
+        document.querySelector('.wallet-action-button.withdraw').onclick = () => showModal('withdrawModal');
+
+        // 添加支付方式选择功能
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', () => {
+                // 移除其他支付方式的选中状态
+                method.parentElement.querySelectorAll('.payment-method').forEach(m => {
+                    m.classList.remove('selected');
+                });
+                // 添加当前支付方式的选中状态
+                method.classList.add('selected');
+            });
+        });
+
+        // 添加快速金额选择功能
+        document.querySelectorAll('.quick-amount-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const amount = btn.textContent;
+                const input = btn.closest('.modal-container').querySelector('.amount-input');
+                if (amount === '全部提现') {
+                    input.value = '1234.56'; // 这里应该是钱包实际余额
+                } else {
+                    input.value = amount.replace('¥', '');
+                }
+            });
+        });
+
+        // 更新输入框验证
+        document.querySelectorAll('.amount-input').forEach(input => {
+            input.addEventListener('input', function(e) {
+                if (this.value < 0) {
+                    this.value = 0;
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === '-' || e.key === 'e') {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // 更新添加银行卡按钮事件
+        document.querySelector('.add-card-btn').onclick = () => showModal('addCardModal');
+
+        // 银行卡号格式化
+        document.querySelector('.card-number-input').addEventListener('input', function(e) {
+            let value = this.value.replace(/\D/g, '');
+            value = value.replace(/(.{4})/g, '$1 ').trim();
+            this.value = value;
+        });
+
+        // 处理协议勾选状态
+        document.querySelector('.checkbox-input').addEventListener('change', function() {
+            const confirmButton = document.querySelector('.add-card-confirm');
+            if (this.checked) {
+                confirmButton.classList.add('active');
+            } else {
+                confirmButton.classList.remove('active');
+            }
+        });
+
+        // 表单验证
+        function validateForm() {
+            const name = document.querySelector('.card-form .form-input[placeholder="请输入持卡人姓名"]').value;
+            const cardNumber = document.querySelector('.card-number-input').value.replace(/\s/g, '');
+            const phone = document.querySelector('.phone-input-group .form-input').value;
+            const agreement = document.querySelector('.checkbox-input').checked;
+
+            return name && cardNumber.length >= 16 && phone.length === 11 && agreement;
+        }
+
+        // 添加银行卡确认按钮点击事件
+        document.querySelector('.add-card-confirm').addEventListener('click', function() {
+            if (!validateForm()) {
+                return;
+            }
+            // TODO: 处理添加银行卡逻辑
+            closeModal('addCardModal');
+        });
+    </script>
+</body>
+</html> 
